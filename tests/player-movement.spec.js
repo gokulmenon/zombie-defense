@@ -2,7 +2,10 @@
 import { test, expect } from '@playwright/test';
 
 test('player moves when keys are pressed', async ({ page }) => {
-  await page.goto('./index.html');
+  // Playwright requires a full URL or configured baseURL for relative paths.
+  // We construct an absolute file:// URL to ensure it works locally without extra config.
+  const filePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/index.html';
+  await page.goto(filePath);
 
   const initialPos = await page.evaluate(() => window.getPlayerPos());
   
