@@ -98,3 +98,6 @@ function draw() {
 
 // Start the game loop
 requestAnimationFrame(gameLoop);
+
+// Expose player position for testing purposes
+window.getPlayerPos = () => ({ x: player.x, y: player.y });
