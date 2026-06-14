@@ -23,36 +23,34 @@ test('enemies move toward player', async ({ page }) => {
   const filePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/index.html';
   await page.goto(filePath);
 
-  // Wait for spawn
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  // Wait for spawn (increased slightly for reliability across browsers)
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
-  const initialEnemyPos = await page.evaluate(() => {
+  const initialDistToCenter = await page.evaluate(() => {
     const enemies = window.getEnemies();
-    return enemies.length > 0 ? enemies[enemies.length - 1] : null;
+    if (enemies.length === 0) return null;
+    // Use index 0 for consistency across frames
+    const enemy = enemies[0]; 
+    const playerX = window.innerWidth / 2;
+    const playerY = window.innerHeight / 2;
+    return Math.sqrt(Math.pow(enemy.x - playerX, 2) + Math.pow(enemy.y - playerY, 2));
   });
 
-  expect(initialEnemyPos).not.toBeNull();
+  expect(initialDistToCenter).not.toBeNull();
 
   // Wait for movement to occur
   await new Promise(resolve => setTimeout(resolve, 500));
 
-  const finalEnemyPos = await page.evaluate(() => {
+  const finalDistToCenter = await page.evaluate(() => {
     const enemies = window.getEnemies();
-    return enemies.length > 0 ? enemies[enemies.length - 1] : null;
+    if (enemies.length === 0) return null;
+    const enemy = enemies[0]; // Same index to track the same entity
+    const playerX = window.innerWidth / 2;
+    const playerY = window.innerHeight / 2;
+    return Math.sqrt(Math.pow(enemy.x - playerX, 2) + Math.pow(enemy.y - playerY, 2));
   });
 
-  // Enemy should have moved closer to player (player is roughly center)
-  if (finalEnemyPos && initialEnemyPos) {
-    const distInitial = Math.sqrt(
-      Math.pow(initialEnemyPos.x - window.innerWidth/2, 2) + 
-      Math.pow(initialEnemyPos.y - window.innerHeight/2, 2)
-    );
-    const distFinal = Math.sqrt(
-      Math.pow(finalEnemyPos.x - window.innerWidth/2, 2) + 
-      Math.pow(finalEnemyPos.y - window.innerHeight/2, 2)
-    );
-    expect(distFinal).toBeLessThan(distInitial);
-  }
+  expect(finalDistToCenter).toBeLessThan(initialDistToCenter);
 });
 
 test('enemies are removed when out of bounds', async ({ page }) => {
