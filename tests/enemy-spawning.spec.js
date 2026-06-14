@@ -5,8 +5,8 @@ test('enemies spawn outside canvas bounds', async ({ page }) => {
   const filePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/index.html';
   await page.goto(filePath);
 
-  // Wait a bit for enemies to spawn
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Wait for enemies to spawn using deterministic tick
+  await page.evaluate(() => window.tickGame(1600));
 
   const enemyPositions = await page.evaluate(() => window.getEnemies());
   
@@ -23,8 +23,8 @@ test('enemies move toward player', async ({ page }) => {
   const filePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/index.html';
   await page.goto(filePath);
 
-  // Wait for spawn (increased slightly for reliability across browsers)
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Wait for spawn using deterministic tick
+  await page.evaluate(() => window.tickGame(1600));
 
   const { width, height } = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
@@ -59,8 +59,8 @@ test('enemies are removed when out of bounds', async ({ page }) => {
   const filePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/index.html';
   await page.goto(filePath);
 
-  // Wait for enemies to spawn and potentially move off screen (if they pass player)
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  // Wait for enemies to spawn and potentially move off screen using deterministic tick
+  await page.evaluate(() => window.tickGame(1600));
 
   const enemyCount = await page.evaluate(() => window.getEnemies().length);
   

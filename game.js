@@ -340,3 +340,14 @@ window.getProjectiles = () => projectiles.map(p => ({ x: p.x, y: p.y }));
 window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y }));
 window.getPlayerXP = () => player.xp;
 window.player = player; // Expose for direct manipulation in tests
+
+// Deterministic test interface to bypass requestAnimationFrame pausing in headless mode
+window.tickGame = (ms) => {
+    // Force the spawn timer to trigger if enough time is passed
+    spawnTimer += ms;
+    if (spawnTimer >= SPAWN_INTERVAL) {
+        spawnEnemy();
+        spawnTimer = 0;
+    }
+    update(ms);
+};

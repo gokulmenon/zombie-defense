@@ -6,7 +6,7 @@ test('pressing spacebar spawns a projectile', async ({ page }) => {
   await page.goto(filePath);
 
   // Wait for game to initialize and spawn an enemy
-  await page.waitForFunction(() => window.getEnemies().length > 0, { timeout: 5000 });
+  await page.evaluate(() => window.tickGame(1600));
 
   expect(await page.evaluate(() => window.getProjectiles().length)).toBe(0);
 
@@ -24,7 +24,7 @@ test('projectile correctly calculates vector toward closest enemy', async ({ pag
   await page.goto(filePath);
 
   // Wait for spawn and initialization
-  await page.waitForFunction(() => window.getEnemies().length > 0, { timeout: 5000 });
+  await page.evaluate(() => window.tickGame(1600));
 
   // Get initial positions
   const playerPos = await page.evaluate(() => window.getPlayerPos());
@@ -64,7 +64,7 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   await page.goto(filePath);
 
   // Wait for spawn
-  await page.waitForFunction(() => window.getEnemies().length > 0, { timeout: 5000 });
+  await page.evaluate(() => window.tickGame(1600));
 
   let enemyCountBefore = await page.evaluate(() => window.getEnemies().length);
   expect(enemyCountBefore).toBeGreaterThan(0);
@@ -82,7 +82,10 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   await page.keyboard.press(' ');
 
   // Wait for collision and removal
-  await page.waitForFunction(() => window.getProjectiles().length === 0, { timeout: 5000 });
+  // Simulate 100 frames of 16ms to guarantee the projectile reaches the enemy
+  await page.evaluate(() => {
+      for(let i=0; i<100; i++) window.tickGame(16);
+  });
 
   const enemyCountAfter = await page.evaluate(() => window.getEnemies().length);
   const projectileCount = await page.evaluate(() => window.getProjectiles().length);
@@ -98,7 +101,7 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
   await page.goto(filePath);
 
   // Wait for spawn
-  await page.waitForFunction(() => window.getEnemies().length > 0, { timeout: 5000 });
+  await page.evaluate(() => window.tickGame(1600));
 
   let initialXP = await page.evaluate(() => window.getPlayerXP());
   
@@ -114,7 +117,10 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
   await page.keyboard.press(' ');
 
   // Wait for collision, gem spawn, and automatic collection by player
-  await page.waitForFunction((initial) => window.getPlayerXP() > initial, initialXP, { timeout: 5000 });
+  // Simulate 100 frames of 16ms to guarantee the projectile reaches the enemy and XP is collected
+  await page.evaluate(() => {
+      for(let i=0; i<100; i++) window.tickGame(16);
+  });
 
   const finalXP = await page.evaluate(() => window.getPlayerXP());
   
