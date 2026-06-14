@@ -15,10 +15,10 @@
 - [x] Add boundary checks to keep player within canvas bounds.
 
 ## Phase 3: Enemy Spawning Logic
-- [ ] Create Enemy class with properties for position, speed, and health.
-- [ ] Implement spawn timer that creates enemies at random positions outside the canvas edges.
-- [ ] Update enemy movement logic to calculate vector towards player and move accordingly.
-- [ ] Manage an array of active enemies and remove them when they leave the screen or die.
+- [x] Create Enemy class with properties for position, speed, and health.
+- [x] Implement spawn timer that creates enemies at random positions outside the canvas edges.
+- [x] Update enemy movement logic to calculate vector towards player and move accordingly.
+- [x] Manage an array of active enemies and remove them when they leave the screen or die.
 
 ## Phase 4: Auto-Combat System
 - [ ] Implement nearest-neighbor search to find closest enemy to player.
