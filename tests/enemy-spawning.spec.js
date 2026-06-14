@@ -26,29 +26,31 @@ test('enemies move toward player', async ({ page }) => {
   // Wait for spawn (increased slightly for reliability across browsers)
   await new Promise(resolve => setTimeout(resolve, 2000));
 
-  const initialDistToCenter = await page.evaluate(() => {
+  const { width, height } = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
+
+  const initialDistToCenter = await page.evaluate(({ width, height }) => {
     const enemies = window.getEnemies();
     if (enemies.length === 0) return null;
     // Use index 0 for consistency across frames
     const enemy = enemies[0]; 
-    const playerX = window.innerWidth / 2;
-    const playerY = window.innerHeight / 2;
+    const playerX = width / 2;
+    const playerY = height / 2;
     return Math.sqrt(Math.pow(enemy.x - playerX, 2) + Math.pow(enemy.y - playerY, 2));
-  });
+  }, { width, height });
 
   expect(initialDistToCenter).not.toBeNull();
 
   // Wait for movement to occur
   await new Promise(resolve => setTimeout(resolve, 500));
 
-  const finalDistToCenter = await page.evaluate(() => {
+  const finalDistToCenter = await page.evaluate(({ width, height }) => {
     const enemies = window.getEnemies();
     if (enemies.length === 0) return null;
     const enemy = enemies[0]; // Same index to track the same entity
-    const playerX = window.innerWidth / 2;
-    const playerY = window.innerHeight / 2;
+    const playerX = width / 2;
+    const playerY = height / 2;
     return Math.sqrt(Math.pow(enemy.x - playerX, 2) + Math.pow(enemy.y - playerY, 2));
-  });
+  }, { width, height });
 
   expect(finalDistToCenter).toBeLessThan(initialDistToCenter);
 });
