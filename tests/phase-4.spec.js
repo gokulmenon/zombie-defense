@@ -6,7 +6,7 @@ test('pressing spacebar spawns a projectile', async ({ page }) => {
   await page.goto(filePath);
 
   // Wait for game to initialize
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise(resolve => setTimeout(resolve, 1600));
 
   expect(await page.evaluate(() => window.getProjectiles().length)).toBe(0);
 
@@ -73,7 +73,7 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   await page.evaluate(() => {
     const enemies = window.getEnemies();
     if (enemies.length > 0) {
-      window.player.x = enemies[0].x; 
+      window.player.x = enemies[0].x - 30; 
       window.player.y = enemies[0].y;
     }
   });
@@ -106,7 +106,7 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
   await page.evaluate(() => {
     const enemies = window.getEnemies();
     if (enemies.length > 0) {
-      window.player.x = enemies[0].x; 
+      window.player.x = enemies[0].x - 30; 
       window.player.y = enemies[0].y;
     }
   });

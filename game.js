@@ -41,9 +41,13 @@ window.addEventListener('keydown', (e) => {
             const dy = closestEnemy.y - player.y;
             const dist = Math.hypot(dx, dy);
             
-            // Normalize directional vector
-            const nx = dx / dist;
-            const ny = dy / dist;
+            // Normalize directional vector, default to right if distance is 0
+            let nx = 1;
+            let ny = 0;
+            if (dist > 0) {
+                nx = dx / dist;
+                ny = dy / dist;
+            }
             
             projectiles.push(new Projectile(player.x, player.y, nx, ny));
         }
