@@ -70,22 +70,15 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   let enemyCountBefore = await page.evaluate(() => window.getEnemies().length);
   expect(enemyCountBefore).toBeGreaterThan(0);
 
-  // Move player close to an enemy to ensure projectile hits it quickly
+  // Group physics setup, action, and ticks into a single synchronous thread block
   await page.evaluate(() => {
     const enemies = window.getEnemies();
     if (enemies.length > 0) {
       window.player.x = enemies[0].x - 10; 
       window.player.y = enemies[0].y;
     }
-  });
-
-  // Fire projectile at the first enemy
-  await page.evaluate(() => window.fireProjectile());
-
-  // Wait for collision and removal
-  // Simulate 5 frames of 16ms to guarantee the projectile reaches the enemy without triggering respawn
-  await page.evaluate(() => {
-      for(let i=0; i<5; i++) window.tickGame(16);
+    window.fireProjectile();
+    for(let i=0; i<5; i++) window.tickGame(16);
   });
 
   const enemyCountAfter = await page.evaluate(() => window.getEnemies().length);
@@ -106,21 +99,15 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
 
   let initialXP = await page.evaluate(() => window.getPlayerXP());
   
-  // Move player close to an enemy so projectile hits it and gem spawns near player
+  // Group physics setup, action, and ticks into a single synchronous thread block
   await page.evaluate(() => {
     const enemies = window.getEnemies();
     if (enemies.length > 0) {
       window.player.x = enemies[0].x - 10; 
       window.player.y = enemies[0].y;
     }
-  });
-
-  await page.evaluate(() => window.fireProjectile());
-
-  // Wait for collision, gem spawn, and automatic collection by player
-  // Simulate 5 frames of 16ms to guarantee the projectile reaches the enemy and XP is collected without triggering respawn
-  await page.evaluate(() => {
-      for(let i=0; i<5; i++) window.tickGame(16);
+    window.fireProjectile();
+    for(let i=0; i<5; i++) window.tickGame(16);
   });
 
   const finalXP = await page.evaluate(() => window.getPlayerXP());
