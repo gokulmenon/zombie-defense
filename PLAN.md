@@ -29,6 +29,21 @@
 - [x] Handle enemy death: remove enemy and projectile, and drop an XP gem entity at the point of death.
 - [x] Update player XP collection when overlapping with XP gems.
 
+## Phase 4.5: Code Abstraction & Refactoring
+- [ ] Extract `Enemy` class and spawn logic into `enemy.js`.
+- [ ] Extract `Projectile` class into `projectile.js`.
+- [ ] Extract `XPGem` class into `gem.js`.
+- [ ] Extract `Player` object and keyboard input tracking into `player.js`.
+- [ ] Update `index.html` to load all new script files in the correct dependency order before `game.js`.
+- [ ] Clean up `game.js` to strictly handle the game loop, canvas rendering, and collision orchestration.
+
+## Phase 4.7: Player HUD & Gem Magnetism
+- [ ] Create a DOM-based HUD overlay (`#hud`) positioned absolutely over the canvas to display Player Health and XP.
+- [ ] Implement an `updateHUD()` function to dynamically sync the DOM text with `player.health` and `player.xp`.
+- [ ] Add a `magnetRadius` property (e.g., 100) to the Player.
+- [ ] Add an `update(dt)` method to `XPGem`. If the distance between the gem and the player is within `magnetRadius`, move the gem toward the player.
+- [ ] Write Playwright tests to verify the HUD updates correctly and that gems move toward the player when within the magnetism radius.
+
 ## Phase 5: Leveling & Wave State Machine
 - [ ] Define XP thresholds for leveling up.
 - [ ] Pause game loop (or slow time) when XP threshold is reached.
