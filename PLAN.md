@@ -21,13 +21,13 @@
 - [x] Manage an array of active enemies and remove them when they leave the screen or die.
 
 ## Phase 4: Combat System & XP Collection
-- [ ] Implement nearest-neighbor search to find the closest enemy to the player.
-- [ ] Create Projectile class with properties for position, velocity, speed, and size.
-- [ ] Implement a keyboard listener for the spacebar to spawn a projectile targeting the closest enemy.
-- [ ] Manage an array of active projectiles, updating their trajectory each frame via deltaTime and removing them when off-screen.
-- [ ] Implement Circle-Circle collision detection between projectiles and enemies.
-- [ ] Handle enemy death: remove enemy and projectile, and drop an XP gem entity at the point of death.
-- [ ] Update player XP collection when overlapping with XP gems.
+- [x] Implement nearest-neighbor search to find the closest enemy to the player.
+- [x] Create Projectile class with properties for position, velocity, speed, and size.
+- [x] Implement a keyboard listener for the spacebar to spawn a projectile targeting the closest enemy.
+- [x] Manage an array of active projectiles, updating their trajectory each frame via deltaTime and removing them when off-screen.
+- [x] Implement Circle-Circle collision detection between projectiles and enemies.
+- [x] Handle enemy death: remove enemy and projectile, and drop an XP gem entity at the point of death.
+- [x] Update player XP collection when overlapping with XP gems.
 
 ## Phase 5: Leveling & Wave State Machine
 - [ ] Define XP thresholds for leveling up.
