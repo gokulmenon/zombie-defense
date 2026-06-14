@@ -21,4 +21,7 @@ test('player moves when keys are pressed', async ({ page }) => {
   // 'w' decreases Y coordinate (moves up), 'd' increases X coordinate (moves right)
   expect(finalPos.x).toBeGreaterThan(initialPos.x);
   expect(finalPos.y).toBeLessThan(initialPos.y);
+
+  // Explicitly close the page to prevent Playwright worker hangs caused by requestAnimationFrame in game.js
+  await page.close();
 });
