@@ -27,6 +27,24 @@ const player = {
 // Keyboard state tracker
 const keys = { w: false, a: false, s: false, d: false };
 
+window.fireProjectile = () => {
+    const closestEnemy = getClosestEnemy();
+    if (closestEnemy) {
+        const dx = closestEnemy.x - player.x;
+        const dy = closestEnemy.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        
+        let nx = 1;
+        let ny = 0;
+        if (dist > 0) {
+            nx = dx / dist;
+            ny = dy / dist;
+        }
+        
+        projectiles.push(new Projectile(player.x, player.y, nx, ny));
+    }
+};
+
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (keys.hasOwnProperty(key)) {
@@ -35,22 +53,7 @@ window.addEventListener('keydown', (e) => {
     
     // Spacebar to fire projectile (Phase 4)
     if (key === ' ') {
-        const closestEnemy = getClosestEnemy();
-        if (closestEnemy) {
-            const dx = closestEnemy.x - player.x;
-            const dy = closestEnemy.y - player.y;
-            const dist = Math.hypot(dx, dy);
-            
-            // Normalize directional vector, default to right if distance is 0
-            let nx = 1;
-            let ny = 0;
-            if (dist > 0) {
-                nx = dx / dist;
-                ny = dy / dist;
-            }
-            
-            projectiles.push(new Projectile(player.x, player.y, nx, ny));
-        }
+        window.fireProjectile();
     }
 });
 

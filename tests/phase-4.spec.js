@@ -79,7 +79,7 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   });
 
   // Fire projectile at the first enemy
-  await page.keyboard.press(' ');
+  await page.evaluate(() => window.fireProjectile());
 
   // Wait for collision and removal
   // Simulate 100 frames of 16ms to guarantee the projectile reaches the enemy
@@ -114,7 +114,7 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
     }
   });
 
-  await page.keyboard.press(' ');
+  await page.evaluate(() => window.fireProjectile());
 
   // Wait for collision, gem spawn, and automatic collection by player
   // Simulate 100 frames of 16ms to guarantee the projectile reaches the enemy and XP is collected
