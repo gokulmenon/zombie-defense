@@ -24,7 +24,7 @@ test('projectile correctly calculates vector toward closest enemy', async ({ pag
   await page.goto(filePath);
 
   // Wait for spawn and initialization
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  await new Promise(resolve => setTimeout(resolve, 1600));
 
   // Get initial positions
   const playerPos = await page.evaluate(() => window.getPlayerPos());
