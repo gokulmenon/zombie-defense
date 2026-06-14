@@ -30,12 +30,14 @@ function generateMap() {
     // Turn 2: Forces enemies to the far Left
     obstacles.push(new Obstacle(W * 0.2, H * 0.30, W * 0.8, thickness));
     // Turn 3: Forces enemies to the far Right again
-    obstacles.push(new Obstacle(0, H * 0.45, W * 0.8, thickness));
+    obstacles.push(new Obstacle(0, H * 0.35, W * 0.8, thickness));
     // Turn 4: Forces enemies to the far Left again
-    obstacles.push(new Obstacle(W * 0.2, H * 0.60, W * 0.8, thickness));
+    obstacles.push(new Obstacle(W * 0.2, H * 0.65, W * 0.8, thickness));
     // The Delta: Central opening near the bottom (30% wide gap in the middle)
     obstacles.push(new Obstacle(0, H * 0.75, W * 0.35, thickness));
     obstacles.push(new Obstacle(W * 0.65, H * 0.75, W * 0.35, thickness));
 }
 
-generateMap();
+generateMap();```
+
+game.js
