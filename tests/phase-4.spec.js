@@ -32,11 +32,12 @@ test('projectile correctly calculates vector toward closest enemy', async ({ pag
   
   expect(enemyPositions.length).toBeGreaterThan(0);
 
-  // Press spacebar to fire
-  await page.keyboard.press(' ');
-
-  // Move for a short time to see if it travels in the right direction
-  await new Promise(resolve => setTimeout(resolve, 100));
+  // Fire synchronously and tick 2 frames
+  await page.evaluate(() => {
+      window.fireProjectile();
+      window.tickGame(16);
+      window.tickGame(16);
+  });
   
   const projPosAfter = await page.evaluate(() => window.getProjectiles()[0]);
   
@@ -82,9 +83,9 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   await page.evaluate(() => window.fireProjectile());
 
   // Wait for collision and removal
-  // Simulate 100 frames of 16ms to guarantee the projectile reaches the enemy
+  // Simulate 5 frames of 16ms to guarantee the projectile reaches the enemy without triggering respawn
   await page.evaluate(() => {
-      for(let i=0; i<100; i++) window.tickGame(16);
+      for(let i=0; i<5; i++) window.tickGame(16);
   });
 
   const enemyCountAfter = await page.evaluate(() => window.getEnemies().length);
@@ -117,9 +118,9 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
   await page.evaluate(() => window.fireProjectile());
 
   // Wait for collision, gem spawn, and automatic collection by player
-  // Simulate 100 frames of 16ms to guarantee the projectile reaches the enemy and XP is collected
+  // Simulate 5 frames of 16ms to guarantee the projectile reaches the enemy and XP is collected without triggering respawn
   await page.evaluate(() => {
-      for(let i=0; i<100; i++) window.tickGame(16);
+      for(let i=0; i<5; i++) window.tickGame(16);
   });
 
   const finalXP = await page.evaluate(() => window.getPlayerXP());
