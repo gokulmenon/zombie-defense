@@ -16,7 +16,12 @@ function resize() {
 
 }
 
-window.addEventListener('resize', resize);
+// Call generateMap() right after initialization and add a window resize listener to recall generateMap().
+generateMap();
+window.addEventListener('resize', () => {
+    resize();
+    generateMap();
+});
 resize(); // Initial call to set correct dimensions on load
 
 // Pause button click listener
@@ -47,6 +52,26 @@ function gameLoop(timestamp) {
 
 }
 
+// Circle-vs-AABB clamping collision helper
+function isCollidingWithObstacles(x, y) {
+    // Check canvas boundaries
+    if (x - player.radius < 0 || x + player.radius > window.innerWidth ||
+        y - player.radius < 0 || y + player.radius > window.innerHeight) {
+        return true;
+    }
+
+    for (const obs of obstacles) {
+        const closestX = Math.max(obs.x, Math.min(x, obs.x + obs.width));
+        const closestY = Math.max(obs.y, Math.min(y, obs.y + obs.height));
+        const dx = x - closestX;
+        const dy = y - closestY;
+        if (dx * dx + dy * dy < player.radius * player.radius) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function update(dt) {
   let dx = 0;
   let dy = 0;
@@ -63,31 +88,20 @@ function update(dt) {
     dy /= length;
   }
 
+  const moveX = dx * player.speed * dt;
+  const moveY = dy * player.speed * dt;
 
-
-  player.x += dx * player.speed * dt;
-  player.y += dy * player.speed * dt;
-
-
-  // Boundary checks to keep the circle within canvas edges (using CSS pixels)
-
-  if (player.x - player.radius < 0) {
-    player.x = player.radius;
+  // Evaluate X and Y movement independently. If moving X hits an obstacle, cancel X movement.
+  const proposedX = player.x + moveX;
+  if (!isCollidingWithObstacles(proposedX, player.y)) {
+      player.x += moveX;
   }
 
-  if (player.x + player.radius > window.innerWidth) {
-    player.x = window.innerWidth - player.radius;
+  // If moving Y hits an obstacle, cancel Y movement.
+  const proposedY = player.y + moveY;
+  if (!isCollidingWithObstacles(player.x, proposedY)) {
+      player.y += moveY;
   }
-
-  if (player.y - player.radius < 0) {
-    player.y = player.radius;
-  }
-
-  if (player.y + player.radius > window.innerHeight) {
-    player.y = window.innerHeight - player.radius;
-  }
-
-
 
   // Update enemies and remove dead/out-of-bounds ones
 
@@ -154,9 +168,15 @@ function draw() {
   // Clear the screen with a dark grey background every frame
   ctx.fillStyle = '#2a2a2a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw obstacles before drawing entities
+  for (const obs of obstacles) {
+    obs.draw(ctx);
+  }
+
   // Draw player as a filled blue circle
 
-  ctx.beginPath();
+   ctx.beginPath();
   ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
   ctx.fillStyle = player.color;
   ctx.fill();

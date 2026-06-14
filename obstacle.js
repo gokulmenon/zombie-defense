@@ -38,6 +38,4 @@ function generateMap() {
     obstacles.push(new Obstacle(W * 0.65, H * 0.75, W * 0.35, thickness));
 }
 
-generateMap();```
-
-game.js
+generateMap();

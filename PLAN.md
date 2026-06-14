@@ -30,21 +30,48 @@
 - [x] Update player XP collection when overlapping with XP gems.
 
 ## Phase 4.5: Code Abstraction & Refactoring
-- [ ] Extract `Enemy` class and spawn logic into `enemy.js`.
-- [ ] Extract `Projectile` class into `projectile.js`.
-- [ ] Extract `XPGem` class into `gem.js`.
-- [ ] Extract `Player` object and keyboard input tracking into `player.js`.
-- [ ] Update `index.html` to load all new script files in the correct dependency order before `game.js`.
-- [ ] Clean up `game.js` to strictly handle the game loop, canvas rendering, and collision orchestration.
+- [x] Extract `Enemy` class and spawn logic into `enemy.js`.
+- [x] Extract `Projectile` class into `projectile.js`.
+- [x] Extract `XPGem` class into `gem.js`.
+- [x] Extract `Player` object and keyboard input tracking into `player.js`.
+- [x] Update `index.html` to load all new script files in the correct dependency order before `game.js`.
+- [x] Clean up `game.js` to strictly handle the game loop, canvas rendering, and collision orchestration.
 
 ## Phase 4.7: Player HUD, Pause State & Gem Magnetism
-- [ ] Create a DOM-based HUD overlay (`#hud`) positioned absolutely over the canvas to display Player Health, Lives, and XP.
-- [ ] Add a clickable "Pause" button to the HUD.
-- [ ] Implement an `updateHUD()` function to dynamically sync the DOM text with player stats.
-- [ ] Implement an `isPaused` state in the game loop to freeze physics, spawning, and timers when active.
-- [ ] Add a `magnetRadius` property to the Player.
-- [ ] Update the `XPGem` logic: if the distance between the gem and the player is within `magnetRadius`, move the gem toward the player.
-- [ ] Write Playwright tests to verify the HUD updates, the pause button stops movement, and gems move toward the player.
+- [x] Create a DOM-based HUD overlay (`#hud`) positioned absolutely over the canvas to display Player Health, Lives, and XP.
+- [x] Add a clickable "Pause" button to the HUD.
+- [x] Implement an `updateHUD()` function to dynamically sync the DOM text with player stats.
+- [x] Implement an `isPaused` state in the game loop to freeze physics, spawning, and timers when active.
+- [x] Add a `magnetRadius` property to the Player.
+- [x] Update the `XPGem` logic: if the distance between the gem and the player is within `magnetRadius`, move the gem toward the player.
+- [x] Write Playwright tests to verify the HUD updates, the pause button stops movement, and gems move toward the player.
+
+## Phase 4.8: Fixed Pathing & Map Architecture
+### Phase 4.8.1: Structural Canyon Rendering & Player Physics
+- [ ] Create `obstacle.js` with an `Obstacle` class (x, y, width, height).
+- [ ] Implement a `generateMap()` function that builds a specific winding tunnel (S-curve) from the top, opening into a wide delta in the bottom-center. The tunnel can start offscreen but the opening at the bottom should be roughly in the center of the screen where the blue player circle is rendered at the start of the game.
+- [ ] Use proportional sizing (e.g., `window.innerWidth * 0.7`) to ensure the map scales with the window.
+- [ ] Implement Circle vs AABB collision math using coordinate clamping.
+- [ ] Update player logic to slide along walls by canceling the specific axis of movement. 
+- [ ] Ensure projectiles DO NOT collide with walls (they shoot over them).
+
+### Phase 4.8.2: Level Encapsulation & AI Line-of-Sight
+- [ ] Create `level.js` to define a `Level` class encapsulating map layout and `baseSpawnRate`.
+- [ ] Refactor the S-curve generation out of `obstacle.js` and into a `Level 1` configuration object.
+- [ ] Update the spawner timer to obey the active level's `baseSpawnRate` while keeping the global 360-degree off-screen spawn logic.
+- [ ] Update enemy logic to apply the exact same AABB collision clamping used for the player so they respect both interior and exterior walls.
+- [ ] Implement a Line-of-Sight (LoS) check: cast a direct vector from the enemy to the player to detect if any obstacle intersects the path.
+
+### Phase 4.8.3: AI Steering & Avoidance
+- [ ] Add an "Avoidance" state to the enemy logic that triggers when their LoS to the player is obstructed.
+- [ ] Calculate the normal of the specific wall the enemy is colliding with.
+- [ ] Apply a perpendicular force (steering behavior) so the enemy slides along the canyon walls until LoS is regained.
+
+### Phase 4.8.4: Playwright Integration Tests
+- [ ] Write test: Verify player movement is clamped and sliding occurs upon intersecting an obstacle.
+- [ ] Write test: Verify projectiles are destroyed immediately upon overlapping with an obstacle.
+- [ ] Write test: Verify enemy Line-of-Sight is correctly blocked by obstacles.
+- [ ] Write test: Verify enemy "Avoidance" state steering behavior forces them to navigate perpendicularly around an obstacle rather than passing through.
 
 ## Phase 5: Leveling & Wave State Machine
 - [ ] Define XP thresholds for leveling up.
