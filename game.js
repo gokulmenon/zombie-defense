@@ -20,7 +20,8 @@ const player = {
     y: window.innerHeight / 2,
     radius: 15,
     speed: 0.2, // pixels per ms
-    color: 'blue'
+    color: 'blue',
+    xp: 0 // XP tracking for Phase 4
 };
 
 // Keyboard state tracker
@@ -30,6 +31,22 @@ window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (keys.hasOwnProperty(key)) {
         keys[key] = true;
+    }
+    
+    // Spacebar to fire projectile (Phase 4)
+    if (key === ' ') {
+        const closestEnemy = getClosestEnemy();
+        if (closestEnemy) {
+            const dx = closestEnemy.x - player.x;
+            const dy = closestEnemy.y - player.y;
+            const dist = Math.hypot(dx, dy);
+            
+            // Normalize directional vector
+            const nx = dx / dist;
+            const ny = dy / dist;
+            
+            projectiles.push(new Projectile(player.x, player.y, nx, ny));
+        }
     }
 });
 
@@ -42,6 +59,8 @@ window.addEventListener('keyup', (e) => {
 
 // Game state variables
 let lastTime = 0;
+const projectiles = [];
+const xpGems = [];
 
 // Enemy Spawning Logic (Phase 3)
 const enemies = [];
@@ -109,6 +128,69 @@ function spawnEnemy() {
     enemies.push(new Enemy(x, y));
 }
 
+// Nearest-neighbor search using Math.hypot (Phase 4)
+function getClosestEnemy() {
+    let closest = null;
+    let minDist = Infinity;
+    
+    for (const enemy of enemies) {
+        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        if (dist < minDist) {
+            minDist = dist;
+            closest = enemy;
+        }
+    }
+    return closest;
+}
+
+// Projectile Class (Phase 4)
+class Projectile {
+    constructor(x, y, vx, vy) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.radius = 4;
+        this.speed = 0.5; // pixels per ms
+        this.color = 'yellow';
+    }
+
+    update(dt) {
+        this.x += this.vx * this.speed * dt;
+        this.y += this.vy * this.speed * dt;
+
+        const margin = 10;
+        return !(this.x < -margin || this.x > window.innerWidth + margin || 
+                 this.y < -margin || this.y > window.innerHeight + margin);
+    }
+
+    draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+    }
+}
+
+// XP Gem Class (Phase 4)
+class XPGem {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 6;
+        this.color = 'green';
+    }
+
+    draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+    }
+}
+
 // Main game loop using requestAnimationFrame
 function gameLoop(timestamp) {
     if (lastTime === 0) { lastTime = timestamp; }
@@ -169,6 +251,49 @@ function update(dt) {
             enemies.splice(i, 1);
         }
     }
+
+    // Update projectiles and check collisions with enemies (Phase 4)
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const proj = projectiles[i];
+        const alive = proj.update(dt);
+        
+        if (!alive) {
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        let hitEnemyIndex = -1;
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            const enemy = enemies[j];
+            // Circle-Circle collision detection
+            const dist = Math.hypot(proj.x - enemy.x, proj.y - enemy.y);
+            if (dist < proj.radius + enemy.radius) {
+                hitEnemyIndex = j;
+                break;
+            }
+        }
+
+        if (hitEnemyIndex !== -1) {
+            // Spawn XP gem at enemy's last coordinates
+            xpGems.push(new XPGem(enemies[hitEnemyIndex].x, enemies[hitEnemyIndex].y));
+            
+            // Remove enemy and projectile
+            enemies.splice(hitEnemyIndex, 1);
+            projectiles.splice(i, 1);
+        }
+    }
+
+    // Update XP gems and check collision with player (Phase 4)
+    for (let i = xpGems.length - 1; i >= 0; i--) {
+        const gem = xpGems[i];
+        
+        // Circle-Circle collision between player and gem
+        const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
+        if (dist < player.radius + gem.radius) {
+            player.xp += 10; // Increase XP
+            xpGems.splice(i, 1);
+        }
+    }
 }
 
 function draw() {
@@ -187,6 +312,16 @@ function draw() {
     for (const enemy of enemies) {
         enemy.draw(ctx);
     }
+
+    // Draw projectiles
+    for (const proj of projectiles) {
+        proj.draw(ctx);
+    }
+
+    // Draw XP gems
+    for (const gem of xpGems) {
+        gem.draw(ctx);
+    }
 }
 
 // Start the game loop
@@ -195,3 +330,7 @@ requestAnimationFrame(gameLoop);
 // Expose player position and enemy state for testing purposes
 window.getPlayerPos = () => ({ x: player.x, y: player.y });
 window.getEnemies = () => enemies.map(e => ({ x: e.x, y: e.y }));
+window.getProjectiles = () => projectiles.map(p => ({ x: p.x, y: p.y }));
+window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y }));
+window.getPlayerXP = () => player.xp;
+window.player = player; // Expose for direct manipulation in tests
