@@ -1,18 +1,18 @@
 # Game Development Roadmap
 
 ## Phase 1: Scaffolding
-- [ ] Create HTML structure with full-screen canvas element.
-- [ ] Apply CSS to remove default margins/padding and handle overflow.
-- [ ] Initialize JavaScript module for game loop using `requestAnimationFrame`.
-- [ ] Implement canvas resizing logic so it always fills the viewport.
-- [ ] Clear canvas each frame with a solid background color.
+- [x] Create HTML structure with full-screen canvas element.
+- [x] Apply CSS to remove default margins/padding and handle overflow.
+- [x] Initialize JavaScript module for game loop using `requestAnimationFrame`.
+- [x] Implement canvas resizing logic so it always fills the viewport.
+- [x] Clear canvas each frame with a solid background color.
 
 ## Phase 2: Player Entity & Movement
-- [ ] Create Player class/object with position, velocity, and dimensions.
-- [ ] Draw player as a simple geometric shape on canvas.
-- [ ] Implement WASD keyboard event listeners to update player velocity.
-- [ ] Update player position based on velocity each frame.
-- [ ] Add boundary checks to keep player within canvas bounds.
+- [x] Create Player class/object with position, velocity, and dimensions.
+- [x] Draw player as a simple geometric shape on canvas.
+- [x] Implement WASD keyboard event listeners to update player velocity.
+- [x] Update player position based on velocity each frame.
+- [x] Add boundary checks to keep player within canvas bounds.
 
 ## Phase 3: Enemy Spawning Logic
 - [ ] Create Enemy class with properties for position, speed, and health.
