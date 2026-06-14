@@ -5,8 +5,8 @@ test('pressing spacebar spawns a projectile', async ({ page }) => {
   const filePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/index.html';
   await page.goto(filePath);
 
-  // Wait for game to initialize
-  await new Promise(resolve => setTimeout(resolve, 1600));
+  // Wait for game to initialize and spawn an enemy
+  await page.waitForFunction(() => window.getEnemies().length > 0, { timeout: 5000 });
 
   expect(await page.evaluate(() => window.getProjectiles().length)).toBe(0);
 
@@ -24,7 +24,7 @@ test('projectile correctly calculates vector toward closest enemy', async ({ pag
   await page.goto(filePath);
 
   // Wait for spawn and initialization
-  await new Promise(resolve => setTimeout(resolve, 1600));
+  await page.waitForFunction(() => window.getEnemies().length > 0, { timeout: 5000 });
 
   // Get initial positions
   const playerPos = await page.evaluate(() => window.getPlayerPos());
@@ -64,7 +64,7 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   await page.goto(filePath);
 
   // Wait for spawn
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  await page.waitForFunction(() => window.getEnemies().length > 0, { timeout: 5000 });
 
   let enemyCountBefore = await page.evaluate(() => window.getEnemies().length);
   expect(enemyCountBefore).toBeGreaterThan(0);
@@ -98,7 +98,7 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
   await page.goto(filePath);
 
   // Wait for spawn
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  await page.waitForFunction(() => window.getEnemies().length > 0, { timeout: 5000 });
 
   let initialXP = await page.evaluate(() => window.getPlayerXP());
   
