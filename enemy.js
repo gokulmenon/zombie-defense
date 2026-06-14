@@ -20,9 +20,18 @@ class Enemy {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 0) {
-            this.x += (dx / dist) * this.speed * dt;
-            this.y += (dy / dist) * this.speed * dt;
+            const moveX = (dx / dist) * this.speed * dt;
+            const moveY = (dy / dist) * this.speed * dt;
 
+            const proposedX = this.x + moveX;
+            if (!isCollidingWithObstacles(proposedX, this.y, this.radius)) {
+                this.x += moveX;
+            }
+
+            const proposedY = this.y + moveY;
+            if (!isCollidingWithObstacles(this.x, proposedY, this.radius)) {
+                this.y += moveY;
+            }
         }
 
         // Remove if completely out of bounds

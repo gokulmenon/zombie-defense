@@ -53,10 +53,10 @@ function gameLoop(timestamp) {
 }
 
 // Circle-vs-AABB clamping collision helper
-function isCollidingWithObstacles(x, y) {
+function isCollidingWithObstacles(x, y, radius) {
     // Check canvas boundaries
-    if (x - player.radius < 0 || x + player.radius > window.innerWidth ||
-        y - player.radius < 0 || y + player.radius > window.innerHeight) {
+    if (x - radius < 0 || x + radius > window.innerWidth ||
+        y - radius < 0 || y + radius > window.innerHeight) {
         return true;
     }
 
@@ -65,7 +65,7 @@ function isCollidingWithObstacles(x, y) {
         const closestY = Math.max(obs.y, Math.min(y, obs.y + obs.height));
         const dx = x - closestX;
         const dy = y - closestY;
-        if (dx * dx + dy * dy < player.radius * player.radius) {
+        if (dx * dx + dy * dy < radius * radius) {
             return true;
         }
     }
@@ -93,13 +93,13 @@ function update(dt) {
 
   // Evaluate X and Y movement independently. If moving X hits an obstacle, cancel X movement.
   const proposedX = player.x + moveX;
-  if (!isCollidingWithObstacles(proposedX, player.y)) {
+  if (!isCollidingWithObstacles(proposedX, player.y, player.radius)) {
       player.x += moveX;
   }
 
   // If moving Y hits an obstacle, cancel Y movement.
   const proposedY = player.y + moveY;
-  if (!isCollidingWithObstacles(player.x, proposedY)) {
+  if (!isCollidingWithObstacles(player.x, proposedY, player.radius)) {
       player.y += moveY;
   }
 
