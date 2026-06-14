@@ -12,7 +12,11 @@ const player = {
 
     color: 'blue',
 
-    xp: 0 // XP tracking for Phase 4
+    xp: 0, // XP tracking for Phase 4
+
+    lives: 3,
+    health: 10,
+    magnetRadius: 150
 
 };
 
@@ -80,6 +84,11 @@ window.addEventListener('keydown', (e) => {
 
     }
 
+    // Pause toggle via 'p' or Escape key
+    if (key === 'p' || e.key === 'Escape') {
+        isPaused = !isPaused;
+    }
+
 });
 
 
@@ -97,5 +106,19 @@ window.addEventListener('keyup', (e) => {
 });
 
 
+
+window.updateHUD = () => {
+    const healthSpan = document.getElementById('hud-health');
+    const livesSpan = document.getElementById('hud-lives');
+    const xpSpan = document.getElementById('hud-xp');
+    const pauseBtn = document.getElementById('pause-btn');
+
+    if (healthSpan) healthSpan.textContent = player.health;
+    if (livesSpan) livesSpan.textContent = player.lives;
+    if (xpSpan) xpSpan.textContent = player.xp;
+    if (pauseBtn) {
+        pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+    }
+};
 
 window.player = player; // Expose for direct manipulation in tests

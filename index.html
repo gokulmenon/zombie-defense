@@ -14,9 +14,29 @@
         canvas {
             display: block;
         }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            pointer-events: none;
+            font-family: sans-serif;
+            user-select: none;
+        }
+        #pause-btn {
+            pointer-events: auto;
+            cursor: pointer;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
+    <div id="hud">
+        Health: <span id="hud-health"></span><br>
+        Lives: <span id="hud-lives"></span><br>
+        XP: <span id="hud-xp"></span><br>
+        <button id="pause-btn" style="pointer-events: auto;">Pause</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
     <script src="enemy.js"></script>
     <script src="projectile.js"></script>

@@ -1,10 +1,10 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-
+let isPaused = false;
+window.getIsPaused = () => isPaused;
 
 // Handle window resizing so the canvas always fills the screen
-
 function resize() {
   const dpr = window.devicePixelRatio || 1;
   canvas.width = window.innerWidth * dpr;
@@ -19,17 +19,21 @@ function resize() {
 window.addEventListener('resize', resize);
 resize(); // Initial call to set correct dimensions on load
 
-
+// Pause button click listener
+document.getElementById('pause-btn').addEventListener('click', () => {
+    isPaused = !isPaused;
+});
 
 let lastTime = 0;
-
-
 
 // Main game loop using requestAnimationFrame
 function gameLoop(timestamp) {
   if (lastTime === 0) { lastTime = timestamp; }
   let deltaTime = timestamp - lastTime;
   lastTime = timestamp;
+
+  if (isPaused) return requestAnimationFrame(gameLoop); // Skip updates/draws when paused
+
   if (deltaTime > 50) deltaTime = 50; // Cap physics to prevent tunneling
   // Spawn timer
   spawnTimer += deltaTime;
@@ -42,8 +46,6 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 
 }
-
-
 
 function update(dt) {
   let dx = 0;
@@ -135,6 +137,8 @@ function update(dt) {
 
   for (let i = xpGems.length - 1; i >= 0; i--) {
     const gem = xpGems[i];
+    gem.update(dt); // Call update before checking collection
+
     // Circle-Circle collision between player and gem
     const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
     if (dist < player.radius + gem.radius) {
@@ -142,6 +146,8 @@ function update(dt) {
       xpGems.splice(i, 1);
     }
   }
+
+  window.updateHUD(); // Call HUD update at the end of each frame
 }
 
 function draw() {
@@ -189,7 +195,7 @@ window.getPlayerXP = () => player.xp;
 
 // Deterministic test interface to bypass requestAnimationFrame pausing in headless mode
 window.tickGame = (ms) => {
-  // Force the spawn timer to trigger if enough time is passed
+  if (isPaused) return; // Skip updates when paused
   spawnTimer += ms;
   if (spawnTimer >= SPAWN_INTERVAL) {
     spawnEnemy();

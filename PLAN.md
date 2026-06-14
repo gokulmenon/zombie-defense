@@ -37,12 +37,14 @@
 - [ ] Update `index.html` to load all new script files in the correct dependency order before `game.js`.
 - [ ] Clean up `game.js` to strictly handle the game loop, canvas rendering, and collision orchestration.
 
-## Phase 4.7: Player HUD & Gem Magnetism
-- [ ] Create a DOM-based HUD overlay (`#hud`) positioned absolutely over the canvas to display Player Health and XP.
-- [ ] Implement an `updateHUD()` function to dynamically sync the DOM text with `player.health` and `player.xp`.
-- [ ] Add a `magnetRadius` property (e.g., 100) to the Player.
-- [ ] Add an `update(dt)` method to `XPGem`. If the distance between the gem and the player is within `magnetRadius`, move the gem toward the player.
-- [ ] Write Playwright tests to verify the HUD updates correctly and that gems move toward the player when within the magnetism radius.
+## Phase 4.7: Player HUD, Pause State & Gem Magnetism
+- [ ] Create a DOM-based HUD overlay (`#hud`) positioned absolutely over the canvas to display Player Health, Lives, and XP.
+- [ ] Add a clickable "Pause" button to the HUD.
+- [ ] Implement an `updateHUD()` function to dynamically sync the DOM text with player stats.
+- [ ] Implement an `isPaused` state in the game loop to freeze physics, spawning, and timers when active.
+- [ ] Add a `magnetRadius` property to the Player.
+- [ ] Update the `XPGem` logic: if the distance between the gem and the player is within `magnetRadius`, move the gem toward the player.
+- [ ] Write Playwright tests to verify the HUD updates, the pause button stops movement, and gems move toward the player.
 
 ## Phase 5: Leveling & Wave State Machine
 - [ ] Define XP thresholds for leveling up.
