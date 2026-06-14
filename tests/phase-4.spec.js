@@ -82,7 +82,7 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   await page.keyboard.press(' ');
 
   // Wait for collision and removal
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await page.waitForFunction(() => window.getProjectiles().length === 0, { timeout: 5000 });
 
   const enemyCountAfter = await page.evaluate(() => window.getEnemies().length);
   const projectileCount = await page.evaluate(() => window.getProjectiles().length);
@@ -114,7 +114,7 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
   await page.keyboard.press(' ');
 
   // Wait for collision, gem spawn, and automatic collection by player
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await page.waitForFunction((initial) => window.getPlayerXP() > initial, initialXP, { timeout: 5000 });
 
   const finalXP = await page.evaluate(() => window.getPlayerXP());
   

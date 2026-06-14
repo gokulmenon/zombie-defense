@@ -199,8 +199,10 @@ class XPGem {
 function gameLoop(timestamp) {
     if (lastTime === 0) { lastTime = timestamp; }
     
-    const deltaTime = timestamp - lastTime;
+    let deltaTime = timestamp - lastTime;
     lastTime = timestamp;
+
+    if (deltaTime > 50) deltaTime = 50; // Cap physics to prevent tunneling
 
     // Spawn timer
     spawnTimer += deltaTime;
