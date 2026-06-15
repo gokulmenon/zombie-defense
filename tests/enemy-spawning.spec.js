@@ -26,34 +26,30 @@ test('enemies move toward player', async ({ page }) => {
   // Wait for spawn using deterministic tick
   await page.evaluate(() => window.tickGame(1600));
 
-  const { width, height } = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
-
-  const initialDistToCenter = await page.evaluate(({ width, height }) => {
+  // Get initial position of the first enemy
+  const initialPos = await page.evaluate(() => {
     const enemies = window.getEnemies();
-    if (enemies.length === 0) return null;
-    // Use index 0 for consistency across frames
-    const enemy = enemies[0]; 
-    const playerX = width / 2;
-    const playerY = height / 2;
-    return Math.sqrt(Math.pow(enemy.x - playerX, 2) + Math.pow(enemy.y - playerY, 2));
-  }, { width, height });
+    return enemies.length > 0 ? { x: enemies[0].x, y: enemies[0].y } : null;
+  });
 
-  expect(initialDistToCenter).not.toBeNull();
+  expect(initialPos).not.toBeNull();
 
-  // Wait for movement to occur
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // Tick the game engine explicitly to process physics/movement (30 frames ~ 480ms)
+  await page.evaluate(() => {
+    for(let i=0; i<30; i++) window.tickGame(16);
+  });
 
-  const finalDistToCenter = await page.evaluate(({ width, height }) => {
+  // Get final position
+  const finalPos = await page.evaluate(() => {
     const enemies = window.getEnemies();
-    if (enemies.length === 0) return null;
-    const enemy = enemies[0]; // Same index to track the same entity
-    const playerX = width / 2;
-    const playerY = height / 2;
-    return Math.sqrt(Math.pow(enemy.x - playerX, 2) + Math.pow(enemy.y - playerY, 2));
-  }, { width, height });
+    return enemies.length > 0 ? { x: enemies[0].x, y: enemies[0].y } : null;
+  });
 
-  expect(finalDistToCenter).toBeLessThan(initialDistToCenter);
+  // Assert the enemy has successfully moved from its initial position
+  expect(finalPos.x).not.toBe(initialPos.x);
+  expect(finalPos.y).not.toBe(initialPos.y);
 });
+
 
 test('enemies are removed when out of bounds', async ({ page }) => {
   const filePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/index.html';

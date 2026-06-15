@@ -41,3 +41,4 @@ function generateMap() {
 }
 
 generateMap();
+window.obstacles = obstacles;
