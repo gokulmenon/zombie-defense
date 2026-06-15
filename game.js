@@ -76,6 +76,39 @@ function isCollidingWithObstacles(x, y, radius, isEnemy = false) {
     return false;
 }
 
+// Helper to check if two line segments (a,b)->(c,d) and (p,q)->(r,s) intersect
+function segmentsIntersect(a, b, c, d, p, q, r, s) {
+    let det = (c - a) * (s - q) - (r - p) * (d - b);
+    if (det === 0) return false;
+    let lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
+    let gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
+    return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+}
+
+// Checks if a line between two points intersects any interior map obstacles
+function checkLineOfSight(x1, y1, x2, y2) {
+    for (const obs of obstacles) {
+        if (obs.isPerimeter) continue;
+
+        const left = obs.x;
+        const right = obs.x + obs.width;
+        const top = obs.y;
+        const bottom = obs.y + obs.height;
+
+        // If either endpoint is physically inside the obstacle block, LoS is instantly broken
+        if (x1 >= left && x1 <= right && y1 >= top && y1 <= bottom) return false;
+        if (x2 >= left && x2 <= right && y2 >= top && y2 <= bottom) return false;
+
+        // Check if the LoS line segment crosses any of the 4 edges of the obstacle
+        if (segmentsIntersect(x1, y1, x2, y2, left, top, left, bottom)) return false;
+        if (segmentsIntersect(x1, y1, x2, y2, right, top, right, bottom)) return false;
+        if (segmentsIntersect(x1, y1, x2, y2, left, top, right, top)) return false;
+        if (segmentsIntersect(x1, y1, x2, y2, left, bottom, right, bottom)) return false;
+    }
+    return true; 
+}
+window.checkLineOfSight = checkLineOfSight;
+
 function update(dt) {
   let dx = 0;
   let dy = 0;
