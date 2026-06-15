@@ -214,3 +214,6 @@ window.tickGame = (ms) => {
   }
   update(ms);
 };
+
+// Test helper to directly set enemy position for deterministic testing
+window.setEnemyPosition = (index, x, y) => { if (enemies[index]) { enemies[index].x = x; enemies[index].y = y; } };

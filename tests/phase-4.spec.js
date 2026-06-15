@@ -72,11 +72,7 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
 
   // Group physics setup, action, and ticks into a single synchronous thread block
   await page.evaluate(() => {
-    const enemies = window.getEnemies();
-    if (enemies.length > 0) {
-      enemies[0].x = window.player.x + 30; 
-      enemies[0].y = window.player.y;
-    }
+    window.setEnemyPosition(0, window.player.x + 30, window.player.y);
     window.fireProjectile();
     for(let i=0; i<30; i++) window.tickGame(16);
   });
@@ -101,11 +97,7 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
   
   // Group physics setup, action, and ticks into a single synchronous thread block
   await page.evaluate(() => {
-    const enemies = window.getEnemies();
-    if (enemies.length > 0) {
-      enemies[0].x = window.player.x + 30; 
-      enemies[0].y = window.player.y;
-    }
+    window.setEnemyPosition(0, window.player.x + 30, window.player.y);
     window.fireProjectile();
     for(let i=0; i<30; i++) window.tickGame(16);
   });
