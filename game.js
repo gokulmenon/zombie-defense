@@ -40,12 +40,14 @@ function gameLoop(timestamp) {
   if (isPaused) return requestAnimationFrame(gameLoop); // Skip updates/draws when paused
 
   if (deltaTime > 50) deltaTime = 50; // Cap physics to prevent tunneling
-  // Spawn timer
+  
+  // Spawn timer check
   spawnTimer += deltaTime;
   if (spawnTimer >= SPAWN_INTERVAL) {
     spawnEnemy();
     spawnTimer = 0;
   }
+  
   update(deltaTime);
   draw();
   requestAnimationFrame(gameLoop);
@@ -104,7 +106,6 @@ function update(dt) {
   }
 
   // Update enemies and remove dead/out-of-bounds ones
-
   for (let i = enemies.length - 1; i >= 0; i--) {
     const alive = enemies[i].update(dt);
     if (!alive) {
@@ -112,10 +113,7 @@ function update(dt) {
     }
   }
 
-
-
   // Update projectiles and check collisions with enemies (Phase 4)
-
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const proj = projectiles[i];
     const alive = proj.update(dt);
@@ -145,10 +143,7 @@ function update(dt) {
     }
   }
 
-
-
   // Update XP gems and check collision with player (Phase 4)
-
   for (let i = xpGems.length - 1; i >= 0; i--) {
     const gem = xpGems[i];
     gem.update(dt); // Call update before checking collection
@@ -175,7 +170,6 @@ function draw() {
   }
 
   // Draw player as a filled blue circle
-
    ctx.beginPath();
   ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
   ctx.fillStyle = player.color;
@@ -183,19 +177,14 @@ function draw() {
   ctx.closePath();
 
   // Draw enemies
-
   for (const enemy of enemies) {
     enemy.draw(ctx);
   }
-
-
 
   // Draw projectiles
   for (const proj of projectiles) {
     proj.draw(ctx);
   }
-
-
 
   // Draw XP gems
   for (const gem of xpGems) {
