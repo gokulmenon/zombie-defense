@@ -4,7 +4,7 @@ const player = {
 
     x: window.innerWidth / 2,
 
-    y: window.innerHeight / 2,
+    y: window.innerHeight * 0.52,
 
     radius: 15,
 
