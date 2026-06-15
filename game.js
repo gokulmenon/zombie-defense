@@ -55,14 +55,16 @@ function gameLoop(timestamp) {
 }
 
 // Circle-vs-AABB clamping collision helper
-function isCollidingWithObstacles(x, y, radius) {
-    // Check canvas boundaries
-    if (x - radius < 0 || x + radius > window.innerWidth ||
-        y - radius < 0 || y + radius > window.innerHeight) {
-        return true;
+function isCollidingWithObstacles(x, y, radius, isEnemy = false) {
+    if (!isEnemy) {
+        if (x - radius < 0 || x + radius > window.innerWidth ||
+            y - radius < 0 || y + radius > window.innerHeight) {
+            return true;
+        }
     }
 
     for (const obs of obstacles) {
+        if (isEnemy && obs.isPerimeter) continue;
         const closestX = Math.max(obs.x, Math.min(x, obs.x + obs.width));
         const closestY = Math.max(obs.y, Math.min(y, obs.y + obs.height));
         const dx = x - closestX;

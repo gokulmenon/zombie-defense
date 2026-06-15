@@ -23,23 +23,13 @@ class Enemy {
             const moveX = (dx / dist) * this.speed * dt;
             const moveY = (dy / dist) * this.speed * dt;
 
-            // Check if enemy is outside the visible viewport bounds
-            const isOutsideViewport = this.x < 0 || this.x > window.innerWidth || 
-                                      this.y < 0 || this.y > window.innerHeight;
-
-            if (!isOutsideViewport) {
-                const proposedX = this.x + moveX;
-                if (!isCollidingWithObstacles(proposedX, this.y, this.radius)) {
-                    this.x += moveX;
-                }
-
-                const proposedY = this.y + moveY;
-                if (!isCollidingWithObstacles(this.x, proposedY, this.radius)) {
-                    this.y += moveY;
-                }
-            } else {
-                // Allow free movement towards player when outside viewport bounds
+            const proposedX = this.x + moveX;
+            if (!isCollidingWithObstacles(proposedX, this.y, this.radius, true)) {
                 this.x += moveX;
+            }
+
+            const proposedY = this.y + moveY;
+            if (!isCollidingWithObstacles(this.x, proposedY, this.radius, true)) {
                 this.y += moveY;
             }
         }
