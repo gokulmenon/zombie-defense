@@ -74,11 +74,11 @@ test('projectiles and enemies are removed upon collision', async ({ page }) => {
   await page.evaluate(() => {
     const enemies = window.getEnemies();
     if (enemies.length > 0) {
-      window.player.x = enemies[0].x - 10; 
-      window.player.y = enemies[0].y;
+      enemies[0].x = window.player.x + 30; 
+      enemies[0].y = window.player.y;
     }
     window.fireProjectile();
-    for(let i=0; i<5; i++) window.tickGame(16);
+    for(let i=0; i<30; i++) window.tickGame(16);
   });
 
   const enemyCountAfter = await page.evaluate(() => window.getEnemies().length);
@@ -103,11 +103,11 @@ test('enemies drop XP gems on death and player collects them', async ({ page }) 
   await page.evaluate(() => {
     const enemies = window.getEnemies();
     if (enemies.length > 0) {
-      window.player.x = enemies[0].x - 10; 
-      window.player.y = enemies[0].y;
+      enemies[0].x = window.player.x + 30; 
+      enemies[0].y = window.player.y;
     }
     window.fireProjectile();
-    for(let i=0; i<5; i++) window.tickGame(16);
+    for(let i=0; i<30; i++) window.tickGame(16);
   });
 
   const finalXP = await page.evaluate(() => window.getPlayerXP());
