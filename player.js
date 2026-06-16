@@ -129,11 +129,14 @@ window.updateHUD = () => {
 
 window.player = player; // Expose for direct manipulation in tests
 
+import { xpGems } from './gem.js'; // Import xpGems from gem.js
+
 // Function to handle gem collection (Phase 5.2)
 window.collectGems = () => {
     // Filter out gems that are collected and process them
     const uncollectedGems = [];
-    for (const gem of window.xpGems) {
+    // Use the imported xpGems directly instead of window.xpGems
+    for (const gem of xpGems) { 
         if (gem.isCollected) {
             // Already collected, skip
             continue;
