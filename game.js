@@ -1,3 +1,5 @@
+import { xpGems } from './gem.js'; // Import xpGems from gem.js
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -170,26 +172,20 @@ function update(dt) {
     }
 
     if (hitEnemyIndex !== -1) {
-      // Spawn XP gem at enemy's last coordinates
-      xpGems.push(new XPGem(enemies[hitEnemyIndex].x, enemies[hitEnemyIndex].y));
-      // Remove enemy and projectile
-      enemies.splice(hitEnemyIndex, 1);
-      projectiles.splice(i, 1);
+      // Apply damage to the enemy instead of immediate removal
+      enemies[hitEnemyIndex].takeDamage(1); // Assuming 1 damage per projectile
+      projectiles.splice(i, 1); // Remove projectile
     }
   }
 
-  // Update XP gems and check collision with player (Phase 4)
+  // Update XP gems
   for (let i = xpGems.length - 1; i >= 0; i--) {
     const gem = xpGems[i];
-    gem.update(dt); // Call update before checking collection
-
-    // Circle-Circle collision between player and gem
-    const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
-    if (dist < player.radius + gem.radius) {
-      player.xp += 10; // Increase XP
-      xpGems.splice(i, 1);
-    }
+    gem.update(dt);
   }
+
+  // Handle gem collection (Phase 5.2)
+  window.collectGems();
 
   window.updateHUD(); // Call HUD update at the end of each frame
 }
@@ -234,7 +230,7 @@ requestAnimationFrame(gameLoop);
 window.getPlayerPos = () => ({ x: player.x, y: player.y });
 window.getEnemies = () => enemies.map(e => ({ x: e.x, y: e.y }));
 window.getProjectiles = () => projectiles.map(p => ({ x: p.x, y: p.y }));
-window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y }));
+window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y, type: g.type, value: g.value }));
 window.getPlayerXP = () => player.xp;
 
 // Deterministic test interface to bypass requestAnimationFrame pausing in headless mode
