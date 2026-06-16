@@ -51,4 +51,6 @@ class XPGem {
 // However, given the import in game.js and player.js, it's likely managed through modules.
 // The export below is the standard module way to make it available.
 export const xpGems = [];
+// Make xpGems globally accessible so non-module scripts (like player.js) can access it.
+window.xpGems = xpGems; 
 export { XPGem }; // Export XPGem class

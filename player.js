@@ -133,7 +133,8 @@ window.player = player; // Expose for direct manipulation in tests
 window.collectGems = () => {
     // We directly modify the xpGems array in place by marking collected gems as isCollected = true.
     // No need to create a new array or reassign window.xpGems.
-    for (const gem of xpGems) { 
+    // Access xpGems from the window object since player.js is not a module.
+    for (const gem of window.xpGems) { 
         if (gem.isCollected) {
             continue; // Skip already collected gems
         }
