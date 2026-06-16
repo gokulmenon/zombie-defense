@@ -59,3 +59,4 @@ class Projectile {
 
 
 const projectiles = [];
+window.xpGems = [];

@@ -46,11 +46,6 @@ class XPGem {
     }
 }
 
-// Ensure xpGems is globally accessible or correctly managed if not global
-// If xpGems is intended to be a global, it should be defined on `window` here.
-// However, given the import in game.js and player.js, it's likely managed through modules.
-// The export below is the standard module way to make it available.
-export const xpGems = [];
-// Make xpGems globally accessible so non-module scripts (like player.js) can access it.
-window.xpGems = xpGems; 
+// Use the globally initialized array
+export const xpGems = window.xpGems;
 export { XPGem }; // Export XPGem class
