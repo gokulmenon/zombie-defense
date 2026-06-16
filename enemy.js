@@ -160,12 +160,12 @@ class Enemy {
 
       // Apply movement with collision clamping
       const proposedX = this.x + moveX;
-      if (!isCollidingWithObstacles(proposedX, this.y, this.radius, true)) {
+      if (!window.isCollidingWithObstacles(proposedX, this.y, this.radius, true)) {
         this.x += moveX;
       }
 
       const proposedY = this.y + moveY;
-      if (!isCollidingWithObstacles(this.x, proposedY, this.radius, true)) {
+      if (!window.isCollidingWithObstacles(this.x, proposedY, this.radius, true)) {
         this.y += moveY;
       }
     }

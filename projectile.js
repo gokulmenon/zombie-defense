@@ -59,4 +59,6 @@ class Projectile {
 
 
 const projectiles = [];
+// EXPOSE GLOBALLY TO ES MODULES:
+window.projectiles = projectiles;
 window.xpGems = [];

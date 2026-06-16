@@ -1,4 +1,3 @@
-import { xpGems } from './gem.js'; // Import xpGems from gem.js
 import { enemies, spawnEnemy } from './enemy.js'; // Import enemy-related exports
 
 const canvas = document.getElementById('gameCanvas');
@@ -7,6 +6,11 @@ const ctx = canvas.getContext('2d');
 let isPaused = false;
 let spawnTimer = 0; // Local spawn timer for game loop
 const SPAWN_INTERVAL = 1500; // Local spawn interval for game loop
+
+// Ensure global array definitions exist before loop frame processing starts
+window.xpGems = window.xpGems || [];
+window.enemies = window.enemies || [];
+window.projectiles = window.projectiles || [];
 window.getIsPaused = () => isPaused;
 
 // Handle window resizing so the canvas always fills the screen
@@ -86,6 +90,8 @@ function isCollidingWithObstacles(x, y, radius, isEnemy = false) {
     }
     return false;
 }
+// EXPOSE TO GLOBAL MODULE BOUNDARIES:
+window.isCollidingWithObstacles = isCollidingWithObstacles;
 
 // Helper to check if two line segments (a,b)->(c,d) and (p,q)->(r,s) intersect
 function segmentsIntersect(a, b, c, d, p, q, r, s) {
@@ -123,10 +129,11 @@ window.checkLineOfSight = checkLineOfSight;
 function update(dt) {
   let dx = 0;
   let dy = 0;
-  if (keys.w) dy -= 1;
-  if (keys.s) dy += 1;
-  if (keys.a) dx -= 1;
-  if (keys.d) dx += 1;
+// FIXED: Read key states explicitly from the shared window global scope
+  if (window.keys && window.keys.w) dy -= 1;
+  if (window.keys && window.keys.s) dy += 1;
+  if (window.keys && window.keys.a) dx -= 1;
+  if (window.keys && window.keys.d) dx += 1;
 
   // Normalize diagonal movement to maintain consistent speed
 
@@ -160,11 +167,11 @@ function update(dt) {
   }
 
   // Update projectiles and check collisions with enemies (Phase 4)
-  for (let i = projectiles.length - 1; i >= 0; i--) {
-    const proj = projectiles[i];
+  for (let i = window.projectiles.length - 1; i >= 0; i--) {
+    const proj = window.projectiles[i];
     const alive = proj.update(dt);
     if (!alive) {
-      projectiles.splice(i, 1);
+      window.projectiles.splice(i, 1);
       continue;
     }
 
@@ -183,13 +190,13 @@ function update(dt) {
     if (hitEnemyIndex !== -1) {
       // Apply damage to the enemy instead of immediate removal
       enemies[hitEnemyIndex].takeDamage(1); // Assuming 1 damage per projectile
-      projectiles.splice(i, 1); // Remove projectile
+      window.projectiles.splice(i, 1); // Remove projectile
     }
   }
 
   // Update XP gems
-  for (let i = xpGems.length - 1; i >= 0; i--) {
-    const gem = xpGems[i];
+  for (let i = window.xpGems.length - 1; i >= 0; i--) {
+    const gem = window.xpGems[i];
     gem.update(dt);
   }
 
@@ -222,12 +229,12 @@ function draw() {
   }
 
   // Draw projectiles
-  for (const proj of projectiles) {
+  for (const proj of window.projectiles) {
     proj.draw(ctx);
   }
 
   // Draw XP gems
-  for (const gem of xpGems) {
+  for (const gem of window.xpGems) {
     gem.draw(ctx);
   }
 }
@@ -238,7 +245,7 @@ requestAnimationFrame(gameLoop);
 // Expose player position and enemy state for testing purposes
 window.getPlayerPos = () => ({ x: player.x, y: player.y });
 window.getEnemies = () => enemies.map(e => ({ x: e.x, y: e.y }));
-window.getProjectiles = () => projectiles.map(p => ({ x: p.x, y: p.y }));
+window.getProjectiles = () => windowprojectiles.map(p => ({ x: p.x, y: p.y }));
 window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y, type: g.type, value: g.value }));
 window.getPlayerXP = () => player.xp;
 

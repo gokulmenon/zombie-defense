@@ -57,7 +57,7 @@ window.fireProjectile = () => {
 
 
 
-        projectiles.push(new Projectile(player.x, player.y, nx, ny));
+        window.projectiles.push(new Projectile(player.x, player.y, nx, ny));
 
     }
 
@@ -155,3 +155,5 @@ window.collectGems = () => {
     // The gameLoop function filters out collected gems when drawing.
     // We don't need to modify the xpGems array directly here after collection.
 };
+
+window.keys = keys;
