@@ -87,7 +87,11 @@ window.addEventListener('keydown', (e) => {
 
     // Pause toggle via 'p' or Escape key
     if (key === 'p' || e.key === 'Escape') {
-        isPaused = !isPaused;
+        // Toggle the pause button via its click event, which is handled in game.js
+        const pauseButton = document.getElementById('pause-btn');
+        if (pauseButton) {
+            pauseButton.click();
+        }
     }
 
 });
@@ -118,7 +122,8 @@ window.updateHUD = () => {
     if (livesSpan) livesSpan.textContent = player.lives;
     if (xpSpan) xpSpan.textContent = player.xp;
     if (pauseBtn) {
-        pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+        // Get the current pause state from the game module's exposed function
+        pauseBtn.textContent = window.getIsPaused() ? 'Resume' : 'Pause';
     }
 };
 

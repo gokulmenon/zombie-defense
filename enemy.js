@@ -1,9 +1,9 @@
 // Enemy Spawning Logic (Phase 3)
 import { XPGem } from './gem.js'; // Import XPGem class
 
-const enemies = [];
-let spawnTimer = 0;
-const SPAWN_INTERVAL = 1500; // ms between spawns initially
+export const enemies = [];
+export let spawnTimer = 0;
+export const SPAWN_INTERVAL = 1500; // ms between spawns initially
 const HEALTH_GEM_DROP_CHANCE = 0.1; // 10% chance for a health gem to drop
 
 class Enemy {
@@ -197,7 +197,7 @@ class Enemy {
 }
 
 
-function spawnEnemy() {
+export function spawnEnemy() {
   const margin = 50;
   const W = window.innerWidth;
 
@@ -223,7 +223,8 @@ function spawnEnemy() {
 
 // Nearest-neighbor search using Math.hypot (Phase 4)
 
-function getClosestEnemy() {
+// Expose getClosestEnemy globally for player.js (which is not a module)
+window.getClosestEnemy = () => {
   let closest = null;
   let minDist = Infinity;
 
@@ -235,6 +236,4 @@ function getClosestEnemy() {
     }
   }
   return closest;
-
-}
-window.enemies = enemies;
+};
