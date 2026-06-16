@@ -63,44 +63,55 @@
 - [x] Implement a Line-of-Sight (LoS) check: cast a direct vector from the enemy to the player to detect if any obstacle intersects the path.
 
 ### Phase 4.8.3: AI Steering & Avoidance
-- [ ] Add an "Avoidance" state to the enemy logic that triggers when their LoS to the player is obstructed.
-- [ ] Calculate the normal of the specific wall the enemy is colliding with.
-- [ ] Apply a perpendicular force (steering behavior) so the enemy slides along the canyon walls until LoS is regained.
+- [x] Add an "Avoidance" state to the enemy logic that triggers when their LoS to the player is obstructed.
+- [x] Calculate the normal of the specific wall the enemy is colliding with.
+- [x] Apply a perpendicular force (steering behavior) so the enemy slides along the canyon walls until LoS is regained.
 
 ### Phase 4.8.4: Playwright Integration Tests
-- [ ] Write test: Verify player movement is clamped and sliding occurs upon intersecting an obstacle.
-- [ ] Write test: Verify enemy Line-of-Sight is correctly blocked by obstacles.
-- [ ] Write test: Verify enemy "Avoidance" state steering behavior forces them to navigate perpendicularly around an obstacle rather than passing through.
+- [x] Write test: Verify player movement is clamped and sliding occurs upon intersecting an obstacle.
+- [x] Write test: Verify enemy Line-of-Sight is correctly blocked by obstacles.
+- [x] Write test: Verify enemy "Avoidance" state steering behavior forces them to navigate perpendicularly around an obstacle rather than passing through.
 
 ## Phase 4.9: Symmetrical Tower Defense Layout & Waypoint AI
 ### Phase 4.9.1: Map Architecture (Hairpins & T-Drop)
-- [ ] In `obstacle.js`, rewrite `generateMap()` to replace the S-curve with a symmetrical dual-tunnel system.
-- [ ] Create a central top divider to separate the left and right tunnels.
-- [ ] Implement three interlocking horizontal walls on both sides to create hairpin turns.
-- [ ] Create a "T-Drop" floor at 45% height with a central gap.
-- [ ] Construct a U-shaped enclosed defensive base in the bottom 55% of the screen.
-- [ ] In `player.js`, update the player's initial `y` coordinate to spawn exactly at the mouth of the T-Drop funnel.
+- [x] In `obstacle.js`, rewrite `generateMap()` to replace the S-curve with a symmetrical dual-tunnel system.
+- [x] Create a central top divider to separate the left and right tunnels.
+- [x] Implement three interlocking horizontal walls on both sides to create hairpin turns.
+- [x] Create a "T-Drop" floor at 45% height with a central gap.
+- [x] Construct a U-shaped enclosed defensive base in the bottom 55% of the screen.
+- [x] In `player.js`, update the player's initial `y` coordinate to spawn exactly at the mouth of the T-Drop funnel.
 
 ### Phase 4.9.2: Directed Top-Spawning
-- [ ] In `enemy.js`, update `spawnEnemy()` to restrict enemy spawning exclusively to the top edge of the canvas.
-- [ ] Implement logic to randomly determine if an enemy spawns on the left side or right side of the central divider.
-- [ ] Pass an `isLeft` boolean flag into the `Enemy` constructor.
+- [x] In `enemy.js`, update `spawnEnemy()` to restrict enemy spawning exclusively to the top edge of the canvas.
+- [x] Implement logic to randomly determine if an enemy spawns on the left side or right side of the central divider.
+- [x] Pass an `isLeft` boolean flag into the `Enemy` constructor.
 
 ### Phase 4.9.3: AI Waypoint Navigation
-- [ ] In `enemy.js`, update the `Enemy` constructor to accept the `isLeft` flag.
-- [ ] Assign an array of specific `waypoints` based on the `isLeft` flag to guide the enemy through the hairpin gaps.
-- [ ] Initialize a `currentWaypoint` tracker.
-- [ ] Update the `update(dt)` movement logic: if the enemy has not reached all waypoints, calculate the movement vector towards the current waypoint instead of the player.
-- [ ] Advance `currentWaypoint` when the enemy gets within a small distance threshold (e.g., 30px) of the active waypoint.
+- [x] In `enemy.js`, update the `Enemy` constructor to accept the `isLeft` flag.
+- [x] Assign an array of specific `waypoints` based on the `isLeft` flag to guide the enemy through the hairpin gaps.
+- [x] Initialize a `currentWaypoint` tracker.
+- [x] Update the `update(dt)` movement logic: if the enemy has not reached all waypoints, calculate the movement vector towards the current waypoint instead of the player.
+- [x] Advance `currentWaypoint` when the enemy gets within a small distance threshold (e.g., 30px) of the active waypoint.
 
-## Phase 5: Leveling & Wave State Machine
+## Phase 5: Tests and Bugfixes, misc features (enhance zombie count, add health gems)
+### Phase 5.1 Consolidate tests, add health gem , fix bugs
+- [ ] Lets consolidate all phase-* tests to single test under 300 lines covering one or two core end to end flows , goal is a good integration/smoke test to catch any regressions and easy maintainability with modular and clean separation of test and setup data code 
+- [ ] When you tap pause button, change button label to "play" and when tap again to play, toggle button label back to "pause"
+
+### Phase 5.2 Add health gems
+- [ ] randomly 1 in 1000 zombies spawn a filled heart emoji that behaves like a gem but instead of XP gives 25 health (instead of green gem)
+= [ ] Increase 25 health when player pulls heart towards them (cap health at 100)
+
+### Phase 5.3 Increase zombie count progressively in waves
+- [ ] Introduce abstraction for levels with level.js which we use for multiplying the zombie spawn counts to show progression (display this current level count on game hud along side health , lives, xp and play/pause button)
+= [ ] keep track of zombies spawned over time and when threshold for level 2 reached update game hud level label to 2 and increase rate of zombies
+
+## Phase 6: Leveling & Wave State Machine
 - [ ] Define XP thresholds for leveling up.
 - [ ] Pause game loop (or slow time) when XP threshold is reached.
-- [ ] Render HTML overlay menu with 3 random upgrade choices.
-- [ ] Handle player selection to apply stat boosts or new weapons.
 - [ ] Implement Wave Manager that increases enemy spawn rate and health over time.
 
-## Phase 6: Game Over & Restart States
+## Phase 7: Game Over & Restart States
 - [ ] Detect when player health reaches zero.
 - [ ] Trigger Game Over state: stop game loop, show final score/stats overlay.
 - [ ] Provide "Restart" button to reset all game variables and restart the loop.
