@@ -1,5 +1,3 @@
-import { xpGems } from './gem.js'; // Import xpGems from gem.js
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -29,6 +27,10 @@ resize(); // Initial call to set correct dimensions on load
 // Pause button click listener
 document.getElementById('pause-btn').addEventListener('click', () => {
     isPaused = !isPaused;
+    const pauseBtn = document.getElementById('pause-btn');
+    if (pauseBtn) {
+        pauseBtn.textContent = isPaused ? 'Play' : 'Pause';
+    }
 });
 
 let lastTime = 0;
@@ -172,20 +174,26 @@ function update(dt) {
     }
 
     if (hitEnemyIndex !== -1) {
-      // Apply damage to the enemy instead of immediate removal
-      enemies[hitEnemyIndex].takeDamage(1); // Assuming 1 damage per projectile
-      projectiles.splice(i, 1); // Remove projectile
+      // Spawn XP gem at enemy's last coordinates
+      xpGems.push(new XPGem(enemies[hitEnemyIndex].x, enemies[hitEnemyIndex].y));
+      // Remove enemy and projectile
+      enemies.splice(hitEnemyIndex, 1);
+      projectiles.splice(i, 1);
     }
   }
 
-  // Update XP gems
+  // Update XP gems and check collision with player (Phase 4)
   for (let i = xpGems.length - 1; i >= 0; i--) {
     const gem = xpGems[i];
-    gem.update(dt);
-  }
+    gem.update(dt); // Call update before checking collection
 
-  // Handle gem collection (Phase 5.2)
-  window.collectGems();
+    // Circle-Circle collision between player and gem
+    const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
+    if (dist < player.radius + gem.radius) {
+      player.xp += 10; // Increase XP
+      xpGems.splice(i, 1);
+    }
+  }
 
   window.updateHUD(); // Call HUD update at the end of each frame
 }
@@ -230,7 +238,7 @@ requestAnimationFrame(gameLoop);
 window.getPlayerPos = () => ({ x: player.x, y: player.y });
 window.getEnemies = () => enemies.map(e => ({ x: e.x, y: e.y }));
 window.getProjectiles = () => projectiles.map(p => ({ x: p.x, y: p.y }));
-window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y, type: g.type, value: g.value }));
+window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y }));
 window.getPlayerXP = () => player.xp;
 
 // Deterministic test interface to bypass requestAnimationFrame pausing in headless mode
