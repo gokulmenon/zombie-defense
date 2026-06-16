@@ -1,7 +1,10 @@
 // Enemy Spawning Logic (Phase 3)
+import { XPGem } from './gem.js'; // Import XPGem class
+
 const enemies = [];
 let spawnTimer = 0;
 const SPAWN_INTERVAL = 1500; // ms between spawns initially
+const HEALTH_GEM_DROP_CHANCE = 0.1; // 10% chance for a health gem to drop
 
 class Enemy {
 
@@ -11,7 +14,7 @@ class Enemy {
         this.isLeft = isLeft;
         this.radius = 12;
         this.speed = 0.1 + Math.random() * 0.1;
-        this.health = 3;
+        this.health = 3; // Initial health
         this.color = 'red';
         
         this.waypointIndex = 0;
@@ -75,6 +78,12 @@ class Enemy {
         const dx = targetX - this.x;
         const dy = targetY - this.y;
         const dist = Math.hypot(dx, dy);
+
+    // If health is depleted, the enemy is considered "defeated"
+    if (this.health <= 0) {
+        this.dropGems();
+        return false; // Signal that this enemy should be removed
+    }
 
     if (dist > 0) {
       let moveX = 0;
@@ -165,6 +174,19 @@ class Enemy {
     return !(this.x < -margin || this.x > window.innerWidth + margin ||
       this.y < -margin || this.y > window.innerHeight + margin);
   }
+
+  takeDamage(amount) {
+    this.health -= amount;
+    // The update loop will check this.health <= 0 and trigger drops/removal
+  }
+
+  dropGems() {
+    window.xpGems.push(new XPGem(this.x, this.y, 'xp'));
+    if (Math.random() < HEALTH_GEM_DROP_CHANCE) {
+      window.xpGems.push(new XPGem(this.x, this.y, 'health'));
+    }
+  }
+
   draw(ctx) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);

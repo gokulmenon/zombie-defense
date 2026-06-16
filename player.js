@@ -15,7 +15,8 @@ const player = {
     xp: 0, // XP tracking for Phase 4
 
     lives: 3,
-    health: 10,
+    health: 100, // Initialize health to maxHealth
+    maxHealth: 100, // Max health for the player
     magnetRadius: 150
 
 };
