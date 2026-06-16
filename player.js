@@ -131,13 +131,11 @@ window.player = player; // Expose for direct manipulation in tests
 
 // Function to handle gem collection (Phase 5.2)
 window.collectGems = () => {
-    // Filter out gems that are collected and process them
-    const uncollectedGems = [];
-    // Use the imported xpGems directly instead of window.xpGems
+    // We directly modify the xpGems array in place by marking collected gems as isCollected = true.
+    // No need to create a new array or reassign window.xpGems.
     for (const gem of xpGems) { 
         if (gem.isCollected) {
-            // Already collected, skip
-            continue;
+            continue; // Skip already collected gems
         }
 
         const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
@@ -151,10 +149,8 @@ window.collectGems = () => {
             }
             gem.isCollected = true;
             window.updateHUD(); // Update HUD to reflect changes
-        } else {
-            uncollectedGems.push(gem);
         }
     }
-    // Removed the line that was overwriting the module-managed xpGems array:
-    // window.xpGems = uncollectedGems; 
+    // The gameLoop function filters out collected gems when drawing.
+    // We don't need to modify the xpGems array directly here after collection.
 };
