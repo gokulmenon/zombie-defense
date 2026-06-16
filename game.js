@@ -1,10 +1,12 @@
 import { xpGems } from './gem.js'; // Import xpGems from gem.js
-import { enemies, spawnTimer, SPAWN_INTERVAL, spawnEnemy } from './enemy.js'; // Import enemy-related exports
+import { enemies, spawnEnemy } from './enemy.js'; // Import enemy-related exports
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 let isPaused = false;
+let spawnTimer = 0; // Local spawn timer for game loop
+const SPAWN_INTERVAL = 1500; // Local spawn interval for game loop
 window.getIsPaused = () => isPaused;
 
 // Handle window resizing so the canvas always fills the screen
