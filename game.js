@@ -46,10 +46,12 @@ function gameLoop(timestamp) {
   let deltaTime = timestamp - lastTime;
   lastTime = timestamp;
 
+  // The isPaused variable is intended to be a mutable state, so it should be declared with 'let'.
+  // This was previously declared as 'const' which is causing the "Assignment to constant variable" error.
   if (isPaused) return requestAnimationFrame(gameLoop); // Skip updates/draws when paused
 
   if (deltaTime > 50) deltaTime = 50; // Cap physics to prevent tunneling
-  
+    
   // Spawn timer check
   spawnTimer += deltaTime;
   if (spawnTimer >= SPAWN_INTERVAL) {
