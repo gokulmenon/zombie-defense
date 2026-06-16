@@ -123,3 +123,31 @@ window.updateHUD = () => {
 };
 
 window.player = player; // Expose for direct manipulation in tests
+
+// Function to handle gem collection (Phase 5.2)
+window.collectGems = () => {
+    // Filter out gems that are collected and process them
+    const uncollectedGems = [];
+    for (const gem of window.xpGems) {
+        if (gem.isCollected) {
+            // Already collected, skip
+            continue;
+        }
+
+        const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
+
+        // Check for physical collection (player body touching gem)
+        if (dist < player.radius + gem.radius) {
+            if (gem.type === 'xp') {
+                player.xp += gem.value;
+            } else if (gem.type === 'health') {
+                player.health = Math.min(player.maxHealth, player.health + gem.value);
+            }
+            gem.isCollected = true;
+            window.updateHUD(); // Update HUD to reflect changes
+        } else {
+            uncollectedGems.push(gem);
+        }
+    }
+    window.xpGems = uncollectedGems; // Update the global gems array
+};
