@@ -1,7 +1,5 @@
 // XP Gem Class (Phase 4)
 
-// XP Gem Class (Phase 4)
-
 class XPGem {
     constructor(x, y, type = 'xp') {
         this.x = x;
@@ -47,4 +45,5 @@ class XPGem {
     }
 }
 
-const xpGems = [];
+export const xpGems = []; // Make xpGems available for other modules (e.g., game.js)
+export { XPGem }; // Export XPGem class
