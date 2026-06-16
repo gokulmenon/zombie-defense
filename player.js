@@ -155,5 +155,6 @@ window.collectGems = () => {
             uncollectedGems.push(gem);
         }
     }
-    window.xpGems = uncollectedGems; // Update the global gems array
+    // Removed the line that was overwriting the module-managed xpGems array:
+    // window.xpGems = uncollectedGems; 
 };
