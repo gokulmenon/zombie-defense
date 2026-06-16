@@ -1,3 +1,6 @@
+import { xpGems } from './gem.js'; // Import xpGems from gem.js
+import { enemies, spawnTimer, SPAWN_INTERVAL, spawnEnemy } from './enemy.js'; // Import enemy-related exports
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
