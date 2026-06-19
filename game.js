@@ -4,8 +4,48 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 let isPaused = false;
+let isGameOver = false;
 let spawnTimer = 0; // Local spawn timer for game loop
-const SPAWN_INTERVAL = 1500; // Local spawn interval for game loop
+
+// --- LEVEL-BASED WAVE / COOLDOWN SYSTEM ---
+// Level = floor(log2(xp/10 + 1)) + 1  (logarithmic XP scaling)
+// Cumulative XP thresholds: 0, 10, 30, 70, 150, 310, 630, ...
+// Each level defines:
+//   - Spawn rate: level zombies per second (interval = 1000/level ms)
+//   - Wave size:  level × 100 zombies before a cooldown
+//   - Cooldown:   10s × 2^(level-1), capped at 60s
+let waveSpawnCount = 0;           // zombies spawned in the current wave
+let cooldownTimer = 0;            // ms remaining in cooldown (0 = spawning)
+
+function getLevel() {
+  return Math.floor(Math.log2(player.xp / 10 + 1)) + 1;
+}
+
+function getSpawnInterval() {
+  return 1000 / getLevel(); // level 1 = 1000ms, level 2 = 500ms, level 3 = 333ms...
+}
+
+function getWaveSize() {
+  return getLevel() * 100; // level 1 = 100, level 2 = 200, level 3 = 300...
+}
+
+function getCooldownDuration() {
+  const level = getLevel();
+  return Math.min(10000 * Math.pow(2, level - 1), 60000); // 10s, 20s, 40s, 60s cap
+}
+
+// Expose spawn rate (zombies per second) for tests
+window.getSpawnRate = () => getLevel();
+
+// Expose wave/level state for tests
+window.getWaveState = () => ({
+  level: getLevel(),
+  spawnCount: waveSpawnCount,
+  waveSize: getWaveSize(),
+  cooldownRemaining: cooldownTimer,
+  cooldownDuration: getCooldownDuration(),
+  inCooldown: cooldownTimer > 0
+});
 
 // Ensure global array definitions exist before loop frame processing starts
 window.xpGems = window.xpGems || [];
@@ -50,17 +90,29 @@ function gameLoop(timestamp) {
   let deltaTime = timestamp - lastTime;
   lastTime = timestamp;
 
-  // The isPaused variable is intended to be a mutable state, so it should be declared with 'let'.
-  // This was previously declared as 'const' which is causing the "Assignment to constant variable" error.
-  if (isPaused) return requestAnimationFrame(gameLoop); // Skip updates/draws when paused
+  if (isGameOver) return; // Stop loop on game over
+  if (isPaused) return requestAnimationFrame(gameLoop);
 
   if (deltaTime > 50) deltaTime = 50; // Cap physics to prevent tunneling
     
-  // Spawn timer check
-  spawnTimer += deltaTime;
-  if (spawnTimer >= SPAWN_INTERVAL) {
-    spawnEnemy();
-    spawnTimer = 0;
+  // Spawn timer check — level-based rate with wave cooldowns
+  if (cooldownTimer > 0) {
+    cooldownTimer -= deltaTime;
+    if (cooldownTimer < 0) cooldownTimer = 0;
+  } else {
+    spawnTimer += deltaTime;
+    const currentSpawnInterval = getSpawnInterval();
+    while (spawnTimer >= currentSpawnInterval && cooldownTimer <= 0) {
+      spawnEnemy();
+      spawnTimer -= currentSpawnInterval;
+      waveSpawnCount++;
+      if (waveSpawnCount >= getWaveSize()) {
+        waveSpawnCount = 0;
+        cooldownTimer = getCooldownDuration();
+        spawnTimer = 0;
+        break;
+      }
+    }
   }
   
   update(deltaTime);
@@ -126,6 +178,76 @@ function checkLineOfSight(x1, y1, x2, y2) {
 }
 window.checkLineOfSight = checkLineOfSight;
 
+// --- DEFENSE TOWERS (gem-purchased auto-firing structures) ---
+const TOWER_COST = 100;        // gems (player.gems) per build and per upgrade
+const TOWER_BUILD_RANGE = 60;  // how close the player must be to a foundation
+
+class Tower {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.level = 1;       // projectiles fired per second (basic tower = 1/s)
+    this.cooldown = 0;    // ms accumulator toward the next shot
+  }
+
+  get fireInterval() { return 1000 / this.level; }
+
+  update(dt) {
+    // Nothing to shoot at: stay primed but do not bank unlimited cooldown.
+    if (!enemies.length) { this.cooldown = Math.min(this.cooldown, this.fireInterval); return; }
+    this.cooldown += dt;
+    while (this.cooldown >= this.fireInterval) {
+      this.cooldown -= this.fireInterval;
+      this.fire();
+    }
+  }
+
+  fire() {
+    // Target the enemy nearest to THIS tower (not the player).
+    let closest = null;
+    let min = Infinity;
+    for (const e of enemies) {
+      const d = Math.hypot(this.x - e.x, this.y - e.y);
+      if (d < min) { min = d; closest = e; }
+    }
+    if (!closest) return;
+    const dx = closest.x - this.x;
+    const dy = closest.y - this.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    window.projectiles.push(new Projectile(this.x, this.y, dx / dist, dy / dist));
+  }
+}
+
+// Find the foundation the player is currently standing close enough to use.
+function nearestFoundationInRange() {
+  let target = null;
+  let min = Infinity;
+  for (const f of (window.foundations || [])) {
+    const cx = f.x + f.width / 2;
+    const cy = f.y + f.height / 2;
+    const d = Math.hypot(player.x - cx, player.y - cy);
+    if (d <= TOWER_BUILD_RANGE && d < min) { min = d; target = f; }
+  }
+  return target;
+}
+
+// Build a basic tower on a nearby foundation, or upgrade the existing one.
+// Each action costs TOWER_COST gems. No-op if no foundation is in range or
+// the player cannot afford it.
+window.buildOrUpgradeTowerNearPlayer = () => {
+  const f = nearestFoundationInRange();
+  if (!f) return false;
+  if (player.gems < TOWER_COST) return false;
+  player.gems -= TOWER_COST;
+  if (!f.tower) {
+    f.tower = new Tower(f.x + f.width / 2, f.y + f.height / 2);
+  } else {
+    f.tower.level += 1; // each upgrade adds one projectile per second
+  }
+  if (window.updateHUD) window.updateHUD();
+  return true;
+};
+
 function update(dt) {
   let dx = 0;
   let dy = 0;
@@ -166,6 +288,28 @@ function update(dt) {
     }
   }
 
+  // Enemy-player collision: enemies that touch the player deal 1 damage and die
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const enemy = enemies[i];
+    const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+    if (dist < player.radius + enemy.radius) {
+      player.health -= 1;
+      enemies.splice(i, 1);
+      if (player.health <= 0) {
+        player.lives -= 1;
+        if (player.lives <= 0) {
+          isGameOver = true;
+          window.updateHUD();
+          showGameOver();
+          return;
+        }
+        // Still have lives — reset health for the next life
+        player.health = player.maxHealth;
+      }
+      window.updateHUD();
+    }
+  }
+
   // Update projectiles and check collisions with enemies (Phase 4)
   for (let i = window.projectiles.length - 1; i >= 0; i--) {
     const proj = window.projectiles[i];
@@ -203,6 +347,11 @@ function update(dt) {
   // Handle gem collection (Phase 5.2)
   window.collectGems();
 
+  // Update defense towers (auto-fire at the nearest enemy)
+  for (const f of (window.foundations || [])) {
+    if (f.tower) f.tower.update(dt);
+  }
+
   window.updateHUD(); // Call HUD update at the end of each frame
 }
 
@@ -214,6 +363,24 @@ function draw() {
   // Draw obstacles before drawing entities
   for (const obs of obstacles) {
     obs.draw(ctx);
+  }
+
+  // Draw tower foundations (and any towers built on them)
+  for (const f of (window.foundations || [])) {
+    ctx.fillStyle = f.tower ? '#555555' : '#3a3a5a';
+    ctx.fillRect(f.x, f.y, f.width, f.height);
+    if (f.tower) {
+      ctx.beginPath();
+      ctx.arc(f.tower.x, f.tower.y, 12, 0, Math.PI * 2);
+      ctx.fillStyle = '#00aaff';
+      ctx.fill();
+      ctx.closePath();
+      ctx.fillStyle = 'white';
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(f.tower.level), f.tower.x, f.tower.y);
+    }
   }
 
   // Draw player as a filled blue circle
@@ -239,6 +406,57 @@ function draw() {
   }
 }
 
+// --- GAME OVER ---
+function showGameOver() {
+  // Create overlay if it doesn't already exist
+  if (document.getElementById('game-over-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'game-over-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;' +
+    'background:rgba(0,0,0,0.75);display:flex;flex-direction:column;' +
+    'align-items:center;justify-content:center;z-index:1000;color:white;font-family:sans-serif;';
+  overlay.innerHTML = '<h1 style="font-size:48px;margin-bottom:20px;">Game Over</h1>' +
+    '<button id="restart-btn" style="font-size:24px;padding:12px 32px;cursor:pointer;">Restart</button>';
+  document.body.appendChild(overlay);
+
+  document.getElementById('restart-btn').addEventListener('click', restartGame);
+}
+
+function restartGame() {
+  // Remove overlay
+  const overlay = document.getElementById('game-over-overlay');
+  if (overlay) overlay.remove();
+
+  // Reset player state
+  player.x = window.innerWidth / 2;
+  player.y = window.innerHeight * 0.52;
+  player.health = player.maxHealth;
+  player.xp = 0;
+  player.gems = 0;
+  player.totalGemsCollected = 0;
+  player.lives = 3;
+
+  // Clear entities
+  enemies.length = 0;
+  window.projectiles.length = 0;
+  window.xpGems.length = 0;
+
+  // Reset towers on foundations
+  for (const f of (window.foundations || [])) {
+    f.tower = null;
+  }
+
+  // Reset spawn/wave state
+  spawnTimer = 0;
+  waveSpawnCount = 0;
+  cooldownTimer = 0;
+
+  isGameOver = false;
+  isPaused = false;
+  window.updateHUD();
+}
+window.restartGame = restartGame;
+
 // Start the game loop
 requestAnimationFrame(gameLoop);
 
@@ -248,14 +466,29 @@ window.getEnemies = () => enemies.map(e => ({ x: e.x, y: e.y }));
 window.getProjectiles = () => windowprojectiles.map(p => ({ x: p.x, y: p.y }));
 window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y, type: g.type, value: g.value }));
 window.getPlayerXP = () => player.xp;
+window.getPlayerGems = () => player.gems;
+window.isGameOver = () => isGameOver;
 
 // Deterministic test interface to bypass requestAnimationFrame pausing in headless mode
 window.tickGame = (ms) => {
-  if (isPaused) return; // Skip updates when paused
-  spawnTimer += ms;
-  if (spawnTimer >= SPAWN_INTERVAL) {
-    spawnEnemy();
-    spawnTimer = 0;
+  if (isPaused || isGameOver) return;
+  if (cooldownTimer > 0) {
+    cooldownTimer -= ms;
+    if (cooldownTimer < 0) cooldownTimer = 0;
+  } else {
+    spawnTimer += ms;
+    const currentSpawnInterval = getSpawnInterval();
+    while (spawnTimer >= currentSpawnInterval && cooldownTimer <= 0) {
+      spawnEnemy();
+      spawnTimer -= currentSpawnInterval;
+      waveSpawnCount++;
+      if (waveSpawnCount >= getWaveSize()) {
+        waveSpawnCount = 0;
+        cooldownTimer = getCooldownDuration();
+        spawnTimer = 0;
+        break;
+      }
+    }
   }
   update(ms);
 };

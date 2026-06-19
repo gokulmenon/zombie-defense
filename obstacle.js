@@ -68,6 +68,19 @@ function generateMap() {
     
     baseLeft.isPerimeter = false; baseRight.isPerimeter = false; baseBottom.isPerimeter = false;
     obstacles.push(baseLeft, baseRight, baseBottom);
+
+    // --- DEFENSE TOWER FOUNDATIONS ---
+    // Two buildable foundation pads flanking the central opening in the middle
+    // of the map, inside the player's reachable base area. They are walkable
+    // markers (not added to `obstacles`) so the player can stand on them and
+    // press 'f' to build/upgrade a tower.
+    const fSize = 40;
+    const foundations = window.foundations || [];
+    foundations.length = 0;
+    const mkFoundation = (cx, cy) => ({ x: cx - fSize / 2, y: cy - fSize / 2, width: fSize, height: fSize, tower: null });
+    foundations.push(mkFoundation(W * 0.40, H * 0.52));
+    foundations.push(mkFoundation(W * 0.60, H * 0.52));
+    window.foundations = foundations;
 }
 
 generateMap();

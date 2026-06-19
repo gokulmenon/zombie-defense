@@ -3,8 +3,16 @@ import { XPGem } from './gem.js'; // Import XPGem class
 
 export const enemies = [];
 export let spawnTimer = 0;
-export const SPAWN_INTERVAL = 1500; // ms between spawns initially
+export const SPAWN_INTERVAL = 1500; // ms between spawns (legacy default, game.js uses dynamic interval)
 const HEALTH_GEM_DROP_CHANCE = 0.1; // 10% chance for a health gem to drop
+
+// Level-based spawn rate: level = floor(log2(xp/10 + 1)) + 1, rate = level zombies/sec
+export function getSpawnRateForXP(xp) {
+  return Math.floor(Math.log2(xp / 10 + 1)) + 1;
+}
+
+// Expose globally so tests can query from non-module scripts
+window.getSpawnRateForXP = getSpawnRateForXP;
 
 class Enemy {
 

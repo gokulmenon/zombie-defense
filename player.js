@@ -12,7 +12,10 @@ const player = {
 
     color: 'blue',
 
-    xp: 0, // XP tracking for Phase 4
+    xp: 0, // XP tracking — experience only, never decremented
+
+    gems: 0, // Gem currency — used for purchases (towers, etc.)
+    totalGemsCollected: 0, // Cumulative gems collected (for XP award tracking)
 
     lives: 3,
     health: 100, // Initialize health to maxHealth
@@ -85,6 +88,11 @@ window.addEventListener('keydown', (e) => {
 
     }
 
+    // 'f' to build or upgrade a defense tower on a nearby foundation
+    if (key === 'f') {
+        if (window.buildOrUpgradeTowerNearPlayer) window.buildOrUpgradeTowerNearPlayer();
+    }
+
     // Pause toggle via 'p' or Escape key
     if (key === 'p' || e.key === 'Escape') {
         // Toggle the pause button via its click event, which is handled in game.js
@@ -116,11 +124,13 @@ window.updateHUD = () => {
     const healthSpan = document.getElementById('hud-health');
     const livesSpan = document.getElementById('hud-lives');
     const xpSpan = document.getElementById('hud-xp');
+    const gemsSpan = document.getElementById('hud-gems');
     const pauseBtn = document.getElementById('pause-btn');
 
     if (healthSpan) healthSpan.textContent = player.health;
     if (livesSpan) livesSpan.textContent = player.lives;
     if (xpSpan) xpSpan.textContent = player.xp;
+    if (gemsSpan) gemsSpan.textContent = player.gems;
     if (pauseBtn) {
         // Get the current pause state from the game module's exposed function
         pauseBtn.textContent = window.getIsPaused() ? 'Resume' : 'Pause';
@@ -134,7 +144,7 @@ window.collectGems = () => {
     // We directly modify the xpGems array in place by marking collected gems as isCollected = true.
     // No need to create a new array or reassign window.xpGems.
     // Access xpGems from the window object since player.js is not a module.
-    for (const gem of window.xpGems) { 
+    for (const gem of window.xpGems) {
         if (gem.isCollected) {
             continue; // Skip already collected gems
         }
@@ -144,7 +154,15 @@ window.collectGems = () => {
         // Check for physical collection (player body touching gem)
         if (dist < player.radius + gem.radius) {
             if (gem.type === 'xp') {
-                player.xp += gem.value;
+                // Add to gem currency, not XP directly
+                player.gems += gem.value;
+                // Track cumulative gems for XP award (1 XP per 10 gems collected)
+                const prevTier = Math.floor(player.totalGemsCollected / 10);
+                player.totalGemsCollected += gem.value;
+                const newTier = Math.floor(player.totalGemsCollected / 10);
+                if (newTier > prevTier) {
+                    player.xp += (newTier - prevTier);
+                }
             } else if (gem.type === 'health') {
                 player.health = Math.min(player.maxHealth, player.health + gem.value);
             }
