@@ -1,13 +1,22 @@
 // XP Gem Class (Phase 4)
 
 class XPGem {
-    constructor(x, y, type = 'xp') {
+    constructor(x, y, type = 'xp', value = null, color = null) {
         this.x = x;
         this.y = y;
         this.type = type; // 'xp' or 'health'
-        this.radius = type === 'health' ? 14 : 6; // Health hearts are slightly larger targets
-        this.value = type === 'health' ? 25 : 10; // 25 HP recovery vs 10 XP points
         this.isCollected = false;
+
+        if (type === 'health') {
+            this.radius = 14;
+            this.value = 25;
+            this.color = null; // rendered as heart emoji
+        } else {
+            // Gem tiers: value 10 (green, r=6), value 20 (pink, r=8), value 50 (white, r=10)
+            this.value = value || 10;
+            this.radius = this.value >= 50 ? 10 : this.value >= 20 ? 8 : 6;
+            this.color = color || (this.value >= 50 ? '#ffffff' : this.value >= 20 ? '#ff69b4' : '#00FFCC');
+        }
     }
 
     update(dt) {
@@ -36,10 +45,10 @@ class XPGem {
             ctx.textBaseline = "middle";
             ctx.fillText("❤️", this.x, this.y);
         } else {
-            // Fallback default green XP gem drawing logic
+            // Gem circle colored by tier
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = '#00FFCC';
+            ctx.fillStyle = this.color || '#00FFCC';
             ctx.fill();
             ctx.closePath();
         }

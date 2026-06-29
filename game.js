@@ -16,6 +16,7 @@ let spawnTimer = 0; // Local spawn timer for game loop
 //   - Cooldown:   10s × 2^(level-1), capped at 60s
 let waveSpawnCount = 0;           // zombies spawned in the current wave
 let cooldownTimer = 0;            // ms remaining in cooldown (0 = spawning)
+let extraFoundationsAdded = false; // flag for level 5+ extra tower foundations
 
 function getLevel() {
   return Math.floor(Math.log2(player.xp / 10 + 1)) + 1;
@@ -36,6 +37,7 @@ function getCooldownDuration() {
 
 // Expose spawn rate (zombies per second) for tests
 window.getSpawnRate = () => getLevel();
+window.getLevel = getLevel;
 
 // Expose wave/level state for tests
 window.getWaveState = () => ({
@@ -288,12 +290,13 @@ function update(dt) {
     }
   }
 
-  // Enemy-player collision: enemies that touch the player deal 1 damage and die
+  // Enemy-player collision: enemies that touch the player deal type-specific damage and die
   for (let i = enemies.length - 1; i >= 0; i--) {
     const enemy = enemies[i];
     const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     if (dist < player.radius + enemy.radius) {
-      player.health -= 1;
+      const damage = enemy.contactDamage || 1;
+      player.health -= damage;
       enemies.splice(i, 1);
       if (player.health <= 0) {
         player.lives -= 1;
@@ -344,12 +347,26 @@ function update(dt) {
     gem.update(dt);
   }
 
+  // Scale magnet radius with level (base 150, +50 per level beyond 1)
+  player.magnetRadius = 150 + (getLevel() - 1) * 50;
+
   // Handle gem collection (Phase 5.2)
   window.collectGems();
 
   // Update defense towers (auto-fire at the nearest enemy)
   for (const f of (window.foundations || [])) {
     if (f.tower) f.tower.update(dt);
+  }
+
+  // At level 5+, add 2 extra tower foundations inside the defensive base
+  if (getLevel() >= 5 && !extraFoundationsAdded) {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const fSize = 40;
+    const mkFoundation = (cx, cy) => ({ x: cx - fSize / 2, y: cy - fSize / 2, width: fSize, height: fSize, tower: null });
+    window.foundations.push(mkFoundation(W * 0.30, H * 0.75));
+    window.foundations.push(mkFoundation(W * 0.70, H * 0.75));
+    extraFoundationsAdded = true;
   }
 
   window.updateHUD(); // Call HUD update at the end of each frame
@@ -441,10 +458,14 @@ function restartGame() {
   window.projectiles.length = 0;
   window.xpGems.length = 0;
 
-  // Reset towers on foundations
+  // Reset towers on foundations and remove extra level-5 foundations
+  if (extraFoundationsAdded && window.foundations && window.foundations.length > 2) {
+    window.foundations.length = 2; // keep only the original 2
+  }
   for (const f of (window.foundations || [])) {
     f.tower = null;
   }
+  extraFoundationsAdded = false;
 
   // Reset spawn/wave state
   spawnTimer = 0;
@@ -462,12 +483,13 @@ requestAnimationFrame(gameLoop);
 
 // Expose player position and enemy state for testing purposes
 window.getPlayerPos = () => ({ x: player.x, y: player.y });
-window.getEnemies = () => enemies.map(e => ({ x: e.x, y: e.y }));
+window.getEnemies = () => enemies.map(e => ({ x: e.x, y: e.y, type: e.type || 'red', color: e.color, health: e.health, radius: e.radius, contactDamage: e.contactDamage || 1 }));
 window.getProjectiles = () => windowprojectiles.map(p => ({ x: p.x, y: p.y }));
 window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y, type: g.type, value: g.value }));
 window.getPlayerXP = () => player.xp;
 window.getPlayerGems = () => player.gems;
 window.isGameOver = () => isGameOver;
+window.getFoundationCount = () => (window.foundations || []).length;
 
 // Deterministic test interface to bypass requestAnimationFrame pausing in headless mode
 window.tickGame = (ms) => {

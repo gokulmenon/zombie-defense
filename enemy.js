@@ -16,15 +16,32 @@ window.getSpawnRateForXP = getSpawnRateForXP;
 
 class Enemy {
 
-  constructor(x, y, isLeft = false) {
+  constructor(x, y, isLeft = false, type = 'red') {
         this.x = x;
         this.y = y;
         this.isLeft = isLeft;
-        this.radius = 12;
-        this.speed = 0.1 + Math.random() * 0.1;
-        this.health = 3; // Initial health
-        this.color = 'red';
-        
+        this.type = type; // 'red' (normal), 'orange' (level 5+), 'purple' (level 10+)
+
+        if (type === 'purple') {
+            this.radius = 22;
+            this.speed = 0.08 + Math.random() * 0.05;
+            this.health = 5;
+            this.color = 'purple';
+            this.contactDamage = 5;
+        } else if (type === 'orange') {
+            this.radius = 16;
+            this.speed = 0.15 + Math.random() * 0.1;
+            this.health = 2;
+            this.color = 'orange';
+            this.contactDamage = 2;
+        } else {
+            this.radius = 12;
+            this.speed = 0.1 + Math.random() * 0.1;
+            this.health = 3;
+            this.color = 'red';
+            this.contactDamage = 1;
+        }
+
         this.waypointIndex = 0;
         this.waypoints = [];
         this.initWaypoints();
@@ -189,7 +206,11 @@ class Enemy {
   }
 
   dropGems() {
-    window.xpGems.push(new XPGem(this.x, this.y, 'xp'));
+    // Drop gem tier matching zombie type:
+    //   red → green gem (value 10), orange → pink gem (value 20), purple → white gem (value 50)
+    const gemValue = this.type === 'purple' ? 50 : this.type === 'orange' ? 20 : 10;
+    const gemColor = this.type === 'purple' ? '#ffffff' : this.type === 'orange' ? '#ff69b4' : null;
+    window.xpGems.push(new XPGem(this.x, this.y, 'xp', gemValue, gemColor));
     if (Math.random() < HEALTH_GEM_DROP_CHANCE) {
       window.xpGems.push(new XPGem(this.x, this.y, 'health'));
     }
@@ -224,7 +245,20 @@ export function spawnEnemy() {
   // Restrict spawning exclusively to the top margin of the viewport
   const y = -margin;
 
-  enemies.push(new Enemy(x, y, isLeft));
+  // Determine zombie type based on current level
+  const currentLevel = getSpawnRateForXP(window.player ? window.player.xp : 0);
+  let type = 'red';
+  if (currentLevel >= 10) {
+    // Level 10+: 20% purple, 30% orange, 50% red
+    const roll = Math.random();
+    if (roll < 0.2) type = 'purple';
+    else if (roll < 0.5) type = 'orange';
+  } else if (currentLevel >= 5) {
+    // Level 5+: 30% orange, 70% red
+    if (Math.random() < 0.3) type = 'orange';
+  }
+
+  enemies.push(new Enemy(x, y, isLeft, type));
 }
 
 

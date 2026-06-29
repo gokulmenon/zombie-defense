@@ -15,7 +15,6 @@ const player = {
     xp: 0, // XP tracking — experience only, never decremented
 
     gems: 0, // Gem currency — used for purchases (towers, etc.)
-    totalGemsCollected: 0, // Cumulative gems collected (for XP award tracking)
 
     lives: 3,
     health: 100, // Initialize health to maxHealth
@@ -123,12 +122,14 @@ window.addEventListener('keyup', (e) => {
 window.updateHUD = () => {
     const healthSpan = document.getElementById('hud-health');
     const livesSpan = document.getElementById('hud-lives');
+    const levelSpan = document.getElementById('hud-level');
     const xpSpan = document.getElementById('hud-xp');
     const gemsSpan = document.getElementById('hud-gems');
     const pauseBtn = document.getElementById('pause-btn');
 
     if (healthSpan) healthSpan.textContent = player.health;
     if (livesSpan) livesSpan.textContent = player.lives;
+    if (levelSpan) levelSpan.textContent = window.getLevel ? window.getLevel() : Math.floor(Math.log2(player.xp / 10 + 1)) + 1;
     if (xpSpan) xpSpan.textContent = player.xp;
     if (gemsSpan) gemsSpan.textContent = player.gems;
     if (pauseBtn) {
@@ -154,15 +155,9 @@ window.collectGems = () => {
         // Check for physical collection (player body touching gem)
         if (dist < player.radius + gem.radius) {
             if (gem.type === 'xp') {
-                // Add to gem currency, not XP directly
+                // Add to gem currency and XP equally
                 player.gems += gem.value;
-                // Track cumulative gems for XP award (1 XP per 10 gems collected)
-                const prevTier = Math.floor(player.totalGemsCollected / 10);
-                player.totalGemsCollected += gem.value;
-                const newTier = Math.floor(player.totalGemsCollected / 10);
-                if (newTier > prevTier) {
-                    player.xp += (newTier - prevTier);
-                }
+                player.xp += gem.value;
             } else if (gem.type === 'health') {
                 player.health = Math.min(player.maxHealth, player.health + gem.value);
             }
@@ -175,3 +170,6 @@ window.collectGems = () => {
 };
 
 window.keys = keys;
+
+// Initial HUD render so values are visible before the game loop starts
+window.updateHUD();
