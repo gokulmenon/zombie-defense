@@ -123,8 +123,9 @@ function checkLineOfSight(x1, y1, x2, y2) {
 window.checkLineOfSight = checkLineOfSight;
 
 // --- DEFENSE TOWERS (gem-purchased auto-firing structures) ---
-const TOWER_COST = 100;        // gems (player.gems) per build and per upgrade
+const TOWER_COST = 100;        // gems (player.gems) per build and base upgrade unit
 const TOWER_BUILD_RANGE = 60;  // how close the player must be to a foundation
+const MAX_TOWER_LEVEL = 10;    // Balance Fix: cap tower level to prevent runaway DPS
 
 class Tower {
   constructor(x, y) {
@@ -188,16 +189,26 @@ function nearestFoundationInRange() {
 window.buildOrUpgradeTowerNearPlayer = () => {
   const f = nearestFoundationInRange();
   if (!f) return false;
-  if (player.gems < TOWER_COST) return false;
-  player.gems -= TOWER_COST;
   if (!f.tower) {
+    // Build: flat 100 gems
+    if (player.gems < TOWER_COST) return false;
+    player.gems -= TOWER_COST;
     f.tower = new Tower(f.x + f.width / 2, f.y + f.height / 2);
   } else {
-    f.tower.level += 1; // each upgrade adds one projectile per second
+    if (f.tower.level >= MAX_TOWER_LEVEL) return false; // capped
+    // Upgrade: cost = 100 + 25 * (current_level - 1)
+    const upgradeCost = TOWER_COST + 25 * (f.tower.level - 1);
+    if (player.gems < upgradeCost) return false;
+    player.gems -= upgradeCost;
+    f.tower.level += 1;
   }
   if (window.updateHUD) window.updateHUD();
   return true;
 };
+
+// Expose tower constants and helpers for tests
+window.MAX_TOWER_LEVEL = MAX_TOWER_LEVEL;
+window.getTowerUpgradeCost = (tower) => tower ? TOWER_COST + 25 * (tower.level - 1) : TOWER_COST;
 
 function update(dt) {
   let dx = 0;
@@ -322,8 +333,8 @@ function update(dt) {
     const H = window.innerHeight;
     const fSize = 40;
     const mkFoundation = (cx, cy) => ({ x: cx - fSize / 2, y: cy - fSize / 2, width: fSize, height: fSize, tower: null });
-    window.foundations.push(mkFoundation(W * 0.30, H * 0.75));
-    window.foundations.push(mkFoundation(W * 0.70, H * 0.75));
+    window.foundations.push(mkFoundation(W * 0.30, H * 0.80));
+    window.foundations.push(mkFoundation(W * 0.70, H * 0.80));
     extraFoundationsAdded = true;
   }
 
@@ -402,7 +413,7 @@ function showGameOver() {
 // Towers persist across lives.
 function respawnPlayer() {
   player.x = window.innerWidth / 2;
-  player.y = window.innerHeight * 0.52;
+  player.y = window.innerHeight * 0.75;
   player.health = player.maxHealth;
 
   // Clear enemies, projectiles, and gems
@@ -424,7 +435,7 @@ function restartGame() {
 
   // Reset player state fully
   player.x = window.innerWidth / 2;
-  player.y = window.innerHeight * 0.52;
+  player.y = window.innerHeight * 0.75;
   player.health = player.maxHealth;
   player.xp = 0;
   player.gems = 0;

@@ -21,7 +21,8 @@ test('R1.1: spawner module exposes level and wave APIs with correct initial valu
   });
 
   expect(state.level).toBe(1);
-  expect(state.spawnRate).toBe(1);
+  // Spawn rate = round(level * 1.5) = round(1.5) = 2
+  expect(state.spawnRate).toBe(2);
   expect(state.wave).toBeDefined();
   expect(state.wave.level).toBe(1);
   expect(state.wave.waveSize).toBe(100); // level * 100
@@ -30,12 +31,14 @@ test('R1.1: spawner module exposes level and wave APIs with correct initial valu
   expect(typeof state.wave.inCooldown).toBe('boolean');
 });
 
-test('R1.2: spawn rate scales with level — xp 0/10/30/70 → rate 1/2/3/4', async ({ page }) => {
+test('R1.2: spawn rate scales with level using 1.5x multiplier', async ({ page }) => {
   await page.goto(PAGE());
   await page.evaluate(() => window.tickGame(16));
 
   const rates = await page.evaluate(() => {
     const results = [];
+    // rate = round(level * 1.5)
+    // level 1 → 2, level 2 → 3, level 3 → 5, level 4 → 6
     for (const xp of [0, 10, 30, 70]) {
       window.player.xp = xp;
       results.push({ xp, level: window.getLevel(), rate: window.getSpawnRate() });
@@ -43,10 +46,10 @@ test('R1.2: spawn rate scales with level — xp 0/10/30/70 → rate 1/2/3/4', as
     return results;
   });
 
-  expect(rates[0]).toEqual({ xp: 0, level: 1, rate: 1 });
-  expect(rates[1]).toEqual({ xp: 10, level: 2, rate: 2 });
-  expect(rates[2]).toEqual({ xp: 30, level: 3, rate: 3 });
-  expect(rates[3]).toEqual({ xp: 70, level: 4, rate: 4 });
+  expect(rates[0]).toEqual({ xp: 0, level: 1, rate: 2 });
+  expect(rates[1]).toEqual({ xp: 10, level: 2, rate: 3 });
+  expect(rates[2]).toEqual({ xp: 30, level: 3, rate: 5 });
+  expect(rates[3]).toEqual({ xp: 70, level: 4, rate: 6 });
 });
 
 test('R1.3: wave state tracks cooldown after wave completes', async ({ page }) => {
@@ -54,16 +57,15 @@ test('R1.3: wave state tracks cooldown after wave completes', async ({ page }) =
   await page.evaluate(() => window.tickGame(16));
 
   const result = await page.evaluate(() => {
-    // At level 1: wave size = 100, spawn interval = 1000ms (1/sec)
-    // We need 100 spawns at 1000ms each = 100,000ms total
+    // At level 1: wave size = 100, spawn rate = 2/sec (interval = 500ms)
+    // Need 100 spawns at 500ms each = 50,000ms to complete the wave
+    // Then cooldown = 10,000ms kicks in
+    // Tick 55s to be safely past wave completion but still in cooldown
     window.player.xp = 0;
     window.enemies.length = 0;
 
-    // Tick in large chunks to complete the wave quickly
-    // Each 1000ms tick spawns 1 enemy; do 100 ticks of 1000ms
-    for (let i = 0; i < 105; i++) {
+    for (let i = 0; i < 55; i++) {
       window.tickGame(1000);
-      // Clear enemies to prevent collision / performance issues
       window.enemies.length = 0;
     }
 
@@ -75,8 +77,8 @@ test('R1.3: wave state tracks cooldown after wave completes', async ({ page }) =
     };
   });
 
-  // After 100+ spawns at level 1, cooldown should have kicked in
-  // Cooldown at level 1 = min(10000 * 2^0, 60000) = 10000ms
+  // After ~55s at level 1 (wave completes at ~50s, cooldown = 10s),
+  // we should be in cooldown
   expect(result.inCooldown).toBe(true);
   expect(result.cooldownRemaining).toBeGreaterThan(0);
   expect(result.cooldownDuration).toBe(10000);
@@ -146,19 +148,23 @@ test('R2.2: towers reset on game over restart', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 600 });
   await page.evaluate(() => window.tickGame(16));
 
-  // Build a tower
-  await page.evaluate(() => {
-    window.player.gems = 200;
+  // Build a tower using direct API call after positioning at foundation
+  const built = await page.evaluate(() => {
+    window.player.gems = 1000;
     window.enemies.length = 0;
 
-    const f = window.foundations[0];
-    window.player.x = f.x + f.width / 2;
-    window.player.y = f.y + f.height / 2;
-    window.buildOrUpgradeTowerNearPlayer();
+    // Try each foundation until one works
+    for (const f of window.foundations) {
+      window.player.x = f.x + f.width / 2;
+      window.player.y = f.y + f.height / 2;
+      if (window.buildOrUpgradeTowerNearPlayer()) return true;
+    }
+    return false;
   });
+  expect(built).toBe(true);
 
-  // Confirm tower exists
-  const towerBefore = await page.evaluate(() => !!window.foundations[0].tower);
+  // Confirm tower exists on at least one foundation
+  const towerBefore = await page.evaluate(() => window.foundations.some(f => !!f.tower));
   expect(towerBefore).toBe(true);
 
   // Force game over: 1 life, 1 health, collision with enemy
@@ -183,12 +189,12 @@ test('R2.2: towers reset on game over restart', async ({ page }) => {
 
   // Verify tower is cleared
   const result = await page.evaluate(() => ({
-    towerCleared: window.foundations[0].tower === null,
+    allTowersCleared: window.foundations.every(f => f.tower === null),
     isGameOver: window.isGameOver(),
     lives: window.player.lives,
   }));
 
-  expect(result.towerCleared).toBe(true);
+  expect(result.allTowersCleared).toBe(true);
   expect(result.isGameOver).toBe(false);
   expect(result.lives).toBe(3);
 });

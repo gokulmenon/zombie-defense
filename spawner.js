@@ -7,9 +7,11 @@ export function getLevel() {
   return Math.floor(Math.log2(player.xp / 10 + 1)) + 1;
 }
 
-// Spawn rate: level zombies per second → interval = 1000/level ms
+// Spawn rate: level × 1.5 zombies per second (rounded) → interval = 1000/rate ms
+// Balance Fix: More aggressive scaling so tower DPS can't keep up alone at high levels
 export function getSpawnInterval() {
-  return 1000 / getLevel();
+  const rate = Math.round(getLevel() * 1.5);
+  return 1000 / rate;
 }
 
 // Wave size: level × 100 zombies before a cooldown
@@ -23,9 +25,9 @@ export function getCooldownDuration() {
   return Math.min(10000 * Math.pow(2, level - 1), 60000);
 }
 
-// Expose spawn rate (zombies per second) for tests — same as getLevel()
+// Expose spawn rate (zombies per second) for tests — level × 1.5 (rounded)
 export function getSpawnRate() {
-  return getLevel();
+  return Math.round(getLevel() * 1.5);
 }
 
 // Legacy compatibility: getSpawnRateForXP(xp) used by enemy.js for zombie type selection

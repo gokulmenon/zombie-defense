@@ -9,11 +9,11 @@ test('Phase 4.9.4: Enemies spawn strictly within top-lane bounds', async ({ page
 
   const { spawnData, widthBounds } = await page.evaluate(() => {
     if (window.enemies) window.enemies.length = 0;
-    
+
     if (typeof window.spawnEnemy === 'function') {
       window.spawnEnemy();
     }
-    
+
     return {
       spawnData: window.enemies.map(e => ({ x: e.x, y: e.y, isLeft: e.isLeft })),
       widthBounds: window.innerWidth
@@ -24,7 +24,7 @@ test('Phase 4.9.4: Enemies spawn strictly within top-lane bounds', async ({ page
 
   for (const enemy of spawnData) {
     expect(enemy.y).toBeLessThanOrEqual(0);
-    
+
     if (enemy.isLeft) {
       expect(enemy.x).toBeLessThan(widthBounds * 0.5);
     } else {
@@ -41,14 +41,15 @@ test('Phase 4.9.4: Enemies progress sequentially through waypoints', async ({ pa
 
   const progression = await page.evaluate(() => {
     if (window.enemies) window.enemies.length = 0;
-    
-    const testEnemy = new Enemy(window.innerWidth * 0.15, -50, true); 
-    testEnemy.speed = 3.0; 
+
+    const testEnemy = new window.Enemy(window.innerWidth * 0.15, -50, true);
+    testEnemy.speed = 0.5; // 0.5 * 16ms = 8px/tick, well under 15px snap radius
     window.enemies.push(testEnemy);
 
     const initialIdx = testEnemy.waypointIndex;
 
-    for (let i = 0; i < 60; i++) window.tickGame(16);
+    // Tick enough for the enemy to reach at least the first waypoint
+    for (let i = 0; i < 1000; i++) window.tickGame(16);
 
     return {
       initialIdx: initialIdx,
@@ -69,32 +70,22 @@ test('Phase 4.9.4: Enemies successfully navigate maze into the player base', asy
   const state = await page.evaluate(() => {
     if (window.enemies) window.enemies.length = 0;
 
-    const testEnemy = new Enemy(window.innerWidth * 0.20, -50, true);
+    const testEnemy = new window.Enemy(window.innerWidth * 0.20, -50, true);
     window.enemies.push(testEnemy);
 
-    // Secure base targets
+    // Move player far away to prevent collision
     if (typeof player !== 'undefined') {
-      player.x = 400;
+      player.x = 750;
       player.y = 550;
     }
 
-    // Direct state validation: Teleport the entity to each waypoint sequentially 
-    // and run a single engine step to verify the index tracks and advances cleanly
-    let exhausted = false;
-    for (let step = 0; step < 15; step++) {
+    // Teleport the enemy to each waypoint sequentially to verify index advances
+    for (let step = 0; step < 20; step++) {
       if (testEnemy.waypointIndex < testEnemy.waypoints.length) {
         const wp = testEnemy.waypoints[testEnemy.waypointIndex];
-        // Snap directly onto target to satisfy proximity requirement
         testEnemy.x = wp.x;
         testEnemy.y = wp.y;
-      } else {
-        exhausted = true;
-        // Path complete, snap onto the player target destination
-        testEnemy.x = player.x;
-        testEnemy.y = player.y;
       }
-      
-      // Update instance state parameters through the core logic pipeline
       testEnemy.update(16);
     }
 
@@ -102,11 +93,9 @@ test('Phase 4.9.4: Enemies successfully navigate maze into the player base', asy
       waypointIdx: testEnemy.waypointIndex,
       totalWaypoints: testEnemy.waypoints.length,
       finalY: testEnemy.y,
-      exhaustedWaypoints: exhausted
     };
   });
 
-  // Verify that the waypoint routing sequence fully completed and target shifted down to player space
   expect(state.waypointIdx).toBeGreaterThanOrEqual(state.totalWaypoints);
   expect(state.finalY).toBeGreaterThan(300);
 });

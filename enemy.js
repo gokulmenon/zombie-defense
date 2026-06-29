@@ -50,27 +50,61 @@ class Enemy {
         const W = window.innerWidth;
         const H = window.innerHeight;
 
+        // Each enemy picks a random lane offset within the tunnel corridors.
+        // This creates a swarm effect — enemies fan out instead of single-filing.
+        const laneOffset = (Math.random() - 0.5) * W * 0.10; // ±5% of screen width
+
+        // Final approach: fan out across the central opening (W*0.30 to W*0.70)
+        const approachX = this.isLeft
+            ? W * (0.32 + Math.random() * 0.18)  // left side: 0.32–0.50
+            : W * (0.50 + Math.random() * 0.18); // right side: 0.50–0.68
+
+        // Corridor Y midpoints — centered between wall bottoms and next wall tops.
+        // Walls at H*0.12, H*0.24, H*0.36, H*0.48 (each 40px thick).
+        // C0=H*0.06, C1=H*0.213, C2=H*0.333, C3=H*0.453, C4=H*0.573
+        const c0 = H * 0.06;
+        const c1 = H * 0.213;
+        const c2 = H * 0.333;
+        const c3 = H * 0.453;
+        const c4 = H * 0.573;
+
         if (this.isLeft) {
             this.waypoints = [
-                { x: W * 0.20, y: H * 0.10 }, // Move down into first lane pocket
-                { x: W * 0.44, y: H * 0.10 }, // Round the first hairpin (center)
-                { x: W * 0.44, y: H * 0.23 }, // Move down past divider
-                { x: W * 0.06, y: H * 0.23 }, // Round the second hairpin (left wall)
-                { x: W * 0.06, y: H * 0.38 }, // Move down past second wall
-                // FIXED: Shifted slightly left (W * 0.46) to clear the divider column edge cleanly
-                { x: W * 0.46, y: H * 0.38 }, 
-                { x: W * 0.46, y: H * 0.52 }  // Drop cleanly into the left mouth of the base
+                // Corridor 0: enter top-left, sweep right toward divider gap
+                { x: W * 0.20 + laneOffset, y: c0 },
+                { x: W * 0.44 + laneOffset * 0.5, y: c0 },
+                // Corridor 1: passed through l1 gap (x>W*0.38), sweep left
+                { x: W * 0.44 + laneOffset * 0.5, y: c1 },
+                { x: W * 0.06 + Math.abs(laneOffset), y: c1 },
+                // Corridor 2: passed through l2 gap (x<W*0.12), sweep right
+                { x: W * 0.06 + Math.abs(laneOffset), y: c2 },
+                { x: W * 0.44 + laneOffset * 0.3, y: c2 },
+                // Corridor 3: passed through l3 gap (x>W*0.38), sweep left
+                { x: W * 0.44 + laneOffset * 0.3, y: c3 },
+                { x: W * 0.06 + Math.abs(laneOffset * 0.5), y: c3 },
+                // Corridor 4: passed through ll4 gap (x<W*0.12), approach base
+                { x: W * 0.06 + Math.abs(laneOffset * 0.5), y: c4 },
+                { x: approachX, y: c4 },
+                { x: approachX, y: H * 0.65 }
             ];
         } else {
             this.waypoints = [
-                { x: W * 0.80, y: H * 0.10 }, // Move down into first lane pocket
-                { x: W * 0.56, y: H * 0.10 }, // Round the first hairpin (center)
-                { x: W * 0.56, y: H * 0.23 }, // Move down past divider
-                { x: W * 0.94, y: H * 0.23 }, // Round the second hairpin (right wall)
-                { x: W * 0.94, y: H * 0.38 }, // Move down past second wall
-                // FIXED: Shifted slightly right (W * 0.54) to clear the divider column edge cleanly
-                { x: W * 0.54, y: H * 0.38 }, 
-                { x: W * 0.54, y: H * 0.52 }  // Drop cleanly into the right mouth of the base
+                // Corridor 0: enter top-right, sweep left toward divider gap
+                { x: W * 0.80 + laneOffset, y: c0 },
+                { x: W * 0.56 + laneOffset * 0.5, y: c0 },
+                // Corridor 1: passed through r1 gap (x<W*0.62), sweep right
+                { x: W * 0.56 + laneOffset * 0.5, y: c1 },
+                { x: W * 0.94 - Math.abs(laneOffset), y: c1 },
+                // Corridor 2: passed through r2 gap (x>W*0.88), sweep left
+                { x: W * 0.94 - Math.abs(laneOffset), y: c2 },
+                { x: W * 0.56 + laneOffset * 0.3, y: c2 },
+                // Corridor 3: passed through r3 gap (x<W*0.62), sweep right
+                { x: W * 0.56 + laneOffset * 0.3, y: c3 },
+                { x: W * 0.94 - Math.abs(laneOffset * 0.5), y: c3 },
+                // Corridor 4: passed through rl4 gap (x>W*0.88), approach base
+                { x: W * 0.94 - Math.abs(laneOffset * 0.5), y: c4 },
+                { x: approachX, y: c4 },
+                { x: approachX, y: H * 0.65 }
             ];
         }
     }
