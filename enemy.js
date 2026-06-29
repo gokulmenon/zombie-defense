@@ -1,18 +1,11 @@
 // Enemy Spawning Logic (Phase 3)
 import { XPGem } from './gem.js'; // Import XPGem class
+import { getLevel } from './spawner.js'; // Import level formula from spawner
 
 export const enemies = [];
 export let spawnTimer = 0;
 export const SPAWN_INTERVAL = 1500; // ms between spawns (legacy default, game.js uses dynamic interval)
 const HEALTH_GEM_DROP_CHANCE = 0.1; // 10% chance for a health gem to drop
-
-// Level-based spawn rate: level = floor(log2(xp/10 + 1)) + 1, rate = level zombies/sec
-export function getSpawnRateForXP(xp) {
-  return Math.floor(Math.log2(xp / 10 + 1)) + 1;
-}
-
-// Expose globally so tests can query from non-module scripts
-window.getSpawnRateForXP = getSpawnRateForXP;
 
 class Enemy {
 
@@ -20,9 +13,15 @@ class Enemy {
         this.x = x;
         this.y = y;
         this.isLeft = isLeft;
-        this.type = type; // 'red' (normal), 'orange' (level 5+), 'purple' (level 10+)
+        this.type = type; // 'red' (normal), 'orange' (level 5+), 'purple' (level 10+), 'boss' (every 5 levels)
 
-        if (type === 'purple') {
+        if (type === 'boss') {
+            this.radius = 30;
+            this.speed = 0.06;
+            this.health = 20;
+            this.color = 'darkred';
+            this.contactDamage = 10;
+        } else if (type === 'purple') {
             this.radius = 22;
             this.speed = 0.08 + Math.random() * 0.05;
             this.health = 5;
@@ -206,6 +205,11 @@ class Enemy {
   }
 
   dropGems() {
+    if (this.type === 'boss') {
+      // Boss drops a gold upgrade gem (value=100, color='#ffd700', radius=12)
+      window.xpGems.push(new XPGem(this.x, this.y, 'xp', 100, '#ffd700'));
+      return;
+    }
     // Drop gem tier matching zombie type:
     //   red → green gem (value 10), orange → pink gem (value 20), purple → white gem (value 50)
     const gemValue = this.type === 'purple' ? 50 : this.type === 'orange' ? 20 : 10;
@@ -246,7 +250,7 @@ export function spawnEnemy() {
   const y = -margin;
 
   // Determine zombie type based on current level
-  const currentLevel = getSpawnRateForXP(window.player ? window.player.xp : 0);
+  const currentLevel = getLevel();
   let type = 'red';
   if (currentLevel >= 10) {
     // Level 10+: 20% purple, 30% orange, 50% red
@@ -261,6 +265,22 @@ export function spawnEnemy() {
   enemies.push(new Enemy(x, y, isLeft, type));
 }
 
+
+
+// Spawn a boss enemy at a random top-lane position
+export function spawnBoss() {
+  const margin = 50;
+  const W = window.innerWidth;
+  const isLeft = Math.random() > 0.5;
+  let x;
+  if (isLeft) {
+    x = Math.random() * (W * 0.38);
+  } else {
+    x = (W * 0.62) + Math.random() * (W * 0.38);
+  }
+  const y = -margin;
+  enemies.push(new Enemy(x, y, isLeft, 'boss'));
+}
 
 
 // Nearest-neighbor search using Math.hypot (Phase 4)
@@ -279,3 +299,8 @@ window.getClosestEnemy = () => {
   }
   return closest;
 };
+
+// Expose Enemy class and spawnEnemy for tests (page.evaluate needs global access)
+window.Enemy = Enemy;
+window.spawnEnemy = spawnEnemy;
+window.enemies = enemies;

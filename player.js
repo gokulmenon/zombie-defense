@@ -155,6 +155,15 @@ window.collectGems = () => {
         // Check for physical collection (player body touching gem)
         if (dist < player.radius + gem.radius) {
             if (gem.type === 'xp') {
+                // Boss gem: gold gem (value=100, color='#ffd700') upgrades all existing towers
+                if (gem.value === 100 && gem.color === '#ffd700') {
+                    // Upgrade all existing towers by +1 level
+                    for (const f of (window.foundations || [])) {
+                        if (f.tower) {
+                            f.tower.level += 1;
+                        }
+                    }
+                }
                 // Add to gem currency and XP equally
                 player.gems += gem.value;
                 player.xp += gem.value;

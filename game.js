@@ -1,53 +1,12 @@
-import { enemies, spawnEnemy } from './enemy.js'; // Import enemy-related exports
+import { enemies } from './enemy.js'; // Import enemy array
+import { getLevel, getSpawnInterval, getWaveSize, getCooldownDuration, getSpawnRate, getWaveState, tickSpawner, resetSpawner, isBossActive, onBossDied } from './spawner.js'; // Import spawn system
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 let isPaused = false;
 let isGameOver = false;
-let spawnTimer = 0; // Local spawn timer for game loop
-
-// --- LEVEL-BASED WAVE / COOLDOWN SYSTEM ---
-// Level = floor(log2(xp/10 + 1)) + 1  (logarithmic XP scaling)
-// Cumulative XP thresholds: 0, 10, 30, 70, 150, 310, 630, ...
-// Each level defines:
-//   - Spawn rate: level zombies per second (interval = 1000/level ms)
-//   - Wave size:  level × 100 zombies before a cooldown
-//   - Cooldown:   10s × 2^(level-1), capped at 60s
-let waveSpawnCount = 0;           // zombies spawned in the current wave
-let cooldownTimer = 0;            // ms remaining in cooldown (0 = spawning)
 let extraFoundationsAdded = false; // flag for level 5+ extra tower foundations
-
-function getLevel() {
-  return Math.floor(Math.log2(player.xp / 10 + 1)) + 1;
-}
-
-function getSpawnInterval() {
-  return 1000 / getLevel(); // level 1 = 1000ms, level 2 = 500ms, level 3 = 333ms...
-}
-
-function getWaveSize() {
-  return getLevel() * 100; // level 1 = 100, level 2 = 200, level 3 = 300...
-}
-
-function getCooldownDuration() {
-  const level = getLevel();
-  return Math.min(10000 * Math.pow(2, level - 1), 60000); // 10s, 20s, 40s, 60s cap
-}
-
-// Expose spawn rate (zombies per second) for tests
-window.getSpawnRate = () => getLevel();
-window.getLevel = getLevel;
-
-// Expose wave/level state for tests
-window.getWaveState = () => ({
-  level: getLevel(),
-  spawnCount: waveSpawnCount,
-  waveSize: getWaveSize(),
-  cooldownRemaining: cooldownTimer,
-  cooldownDuration: getCooldownDuration(),
-  inCooldown: cooldownTimer > 0
-});
 
 // Ensure global array definitions exist before loop frame processing starts
 window.xpGems = window.xpGems || [];
@@ -96,27 +55,10 @@ function gameLoop(timestamp) {
   if (isPaused) return requestAnimationFrame(gameLoop);
 
   if (deltaTime > 50) deltaTime = 50; // Cap physics to prevent tunneling
-    
-  // Spawn timer check — level-based rate with wave cooldowns
-  if (cooldownTimer > 0) {
-    cooldownTimer -= deltaTime;
-    if (cooldownTimer < 0) cooldownTimer = 0;
-  } else {
-    spawnTimer += deltaTime;
-    const currentSpawnInterval = getSpawnInterval();
-    while (spawnTimer >= currentSpawnInterval && cooldownTimer <= 0) {
-      spawnEnemy();
-      spawnTimer -= currentSpawnInterval;
-      waveSpawnCount++;
-      if (waveSpawnCount >= getWaveSize()) {
-        waveSpawnCount = 0;
-        cooldownTimer = getCooldownDuration();
-        spawnTimer = 0;
-        break;
-      }
-    }
-  }
-  
+
+  // Spawn timer — delegated to spawner module
+  tickSpawner(deltaTime);
+
   update(deltaTime);
   draw();
   requestAnimationFrame(gameLoop);
@@ -205,16 +147,23 @@ class Tower {
   }
 
   fire() {
-    // Target the enemy nearest to THIS tower (not the player).
-    let closest = null;
-    let min = Infinity;
+    // Target by type priority: boss > purple > orange > red
+    const PRIORITY = { boss: 4, purple: 3, orange: 2, red: 1 };
+    let best = null;
+    let bestPriority = -1;
+    let bestDist = Infinity;
     for (const e of enemies) {
+      const p = PRIORITY[e.type] || 0;
       const d = Math.hypot(this.x - e.x, this.y - e.y);
-      if (d < min) { min = d; closest = e; }
+      if (p > bestPriority || (p === bestPriority && d < bestDist)) {
+        best = e;
+        bestPriority = p;
+        bestDist = d;
+      }
     }
-    if (!closest) return;
-    const dx = closest.x - this.x;
-    const dy = closest.y - this.y;
+    if (!best) return;
+    const dx = best.x - this.x;
+    const dy = best.y - this.y;
     const dist = Math.hypot(dx, dy) || 1;
     window.projectiles.push(new Projectile(this.x, this.y, dx / dist, dy / dist));
   }
@@ -286,6 +235,10 @@ function update(dt) {
   for (let i = enemies.length - 1; i >= 0; i--) {
     const alive = enemies[i].update(dt);
     if (!alive) {
+      // Check if the dead enemy was the boss
+      if (enemies[i] && enemies[i].type === 'boss') {
+        onBossDied();
+      }
       enemies.splice(i, 1);
     }
   }
@@ -297,6 +250,10 @@ function update(dt) {
     if (dist < player.radius + enemy.radius) {
       const damage = enemy.contactDamage || 1;
       player.health -= damage;
+      // Check if this was the boss before removing
+      if (enemy.type === 'boss') {
+        onBossDied();
+      }
       enemies.splice(i, 1);
       if (player.health <= 0) {
         player.lives -= 1;
@@ -306,8 +263,9 @@ function update(dt) {
           showGameOver();
           return;
         }
-        // Still have lives — reset health for the next life
-        player.health = player.maxHealth;
+        // Still have lives — respawn (clear enemies, reset spawn state, keep towers)
+        respawnPlayer();
+        return;
       }
       window.updateHUD();
     }
@@ -439,12 +397,32 @@ function showGameOver() {
   document.getElementById('restart-btn').addEventListener('click', restartGame);
 }
 
+// --- RESPAWN (life lost but lives > 0) ---
+// Resets player position/health, clears enemies/projectiles/gems, resets spawn state.
+// Towers persist across lives.
+function respawnPlayer() {
+  player.x = window.innerWidth / 2;
+  player.y = window.innerHeight * 0.52;
+  player.health = player.maxHealth;
+
+  // Clear enemies, projectiles, and gems
+  enemies.length = 0;
+  window.projectiles.length = 0;
+  window.xpGems.length = 0;
+
+  // Reset spawn state (towers stay)
+  resetSpawner();
+
+  window.updateHUD();
+}
+window.respawnPlayer = respawnPlayer;
+
 function restartGame() {
   // Remove overlay
   const overlay = document.getElementById('game-over-overlay');
   if (overlay) overlay.remove();
 
-  // Reset player state
+  // Reset player state fully
   player.x = window.innerWidth / 2;
   player.y = window.innerHeight * 0.52;
   player.health = player.maxHealth;
@@ -458,7 +436,7 @@ function restartGame() {
   window.projectiles.length = 0;
   window.xpGems.length = 0;
 
-  // Reset towers on foundations and remove extra level-5 foundations
+  // Reset towers on foundations and remove extra level-5 foundations (full reset)
   if (extraFoundationsAdded && window.foundations && window.foundations.length > 2) {
     window.foundations.length = 2; // keep only the original 2
   }
@@ -468,9 +446,7 @@ function restartGame() {
   extraFoundationsAdded = false;
 
   // Reset spawn/wave state
-  spawnTimer = 0;
-  waveSpawnCount = 0;
-  cooldownTimer = 0;
+  resetSpawner();
 
   isGameOver = false;
   isPaused = false;
@@ -484,7 +460,7 @@ requestAnimationFrame(gameLoop);
 // Expose player position and enemy state for testing purposes
 window.getPlayerPos = () => ({ x: player.x, y: player.y });
 window.getEnemies = () => enemies.map(e => ({ x: e.x, y: e.y, type: e.type || 'red', color: e.color, health: e.health, radius: e.radius, contactDamage: e.contactDamage || 1 }));
-window.getProjectiles = () => windowprojectiles.map(p => ({ x: p.x, y: p.y }));
+window.getProjectiles = () => window.projectiles.map(p => ({ x: p.x, y: p.y }));
 window.getXPGems = () => xpGems.map(g => ({ x: g.x, y: g.y, type: g.type, value: g.value }));
 window.getPlayerXP = () => player.xp;
 window.getPlayerGems = () => player.gems;
@@ -494,24 +470,7 @@ window.getFoundationCount = () => (window.foundations || []).length;
 // Deterministic test interface to bypass requestAnimationFrame pausing in headless mode
 window.tickGame = (ms) => {
   if (isPaused || isGameOver) return;
-  if (cooldownTimer > 0) {
-    cooldownTimer -= ms;
-    if (cooldownTimer < 0) cooldownTimer = 0;
-  } else {
-    spawnTimer += ms;
-    const currentSpawnInterval = getSpawnInterval();
-    while (spawnTimer >= currentSpawnInterval && cooldownTimer <= 0) {
-      spawnEnemy();
-      spawnTimer -= currentSpawnInterval;
-      waveSpawnCount++;
-      if (waveSpawnCount >= getWaveSize()) {
-        waveSpawnCount = 0;
-        cooldownTimer = getCooldownDuration();
-        spawnTimer = 0;
-        break;
-      }
-    }
-  }
+  tickSpawner(ms);
   update(ms);
 };
 

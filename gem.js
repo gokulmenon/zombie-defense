@@ -12,9 +12,9 @@ class XPGem {
             this.value = 25;
             this.color = null; // rendered as heart emoji
         } else {
-            // Gem tiers: value 10 (green, r=6), value 20 (pink, r=8), value 50 (white, r=10)
+            // Gem tiers: value 10 (green, r=6), value 20 (pink, r=8), value 50 (white, r=10), value 100 (gold boss gem, r=12)
             this.value = value || 10;
-            this.radius = this.value >= 50 ? 10 : this.value >= 20 ? 8 : 6;
+            this.radius = this.value >= 100 ? 12 : this.value >= 50 ? 10 : this.value >= 20 ? 8 : 6;
             this.color = color || (this.value >= 50 ? '#ffffff' : this.value >= 20 ? '#ff69b4' : '#00FFCC');
         }
     }
@@ -58,3 +58,6 @@ class XPGem {
 // Use the globally initialized array
 export const xpGems = window.xpGems;
 export { XPGem }; // Export XPGem class
+
+// Expose XPGem globally for tests (page.evaluate needs global access)
+window.XPGem = XPGem;
