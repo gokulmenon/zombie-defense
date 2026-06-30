@@ -210,14 +210,48 @@ window.buildOrUpgradeTowerNearPlayer = () => {
 window.MAX_TOWER_LEVEL = MAX_TOWER_LEVEL;
 window.getTowerUpgradeCost = (tower) => tower ? TOWER_COST + 25 * (tower.level - 1) : TOWER_COST;
 
+// Build or upgrade a tower at a specific (x,y) position — used by touch controls.
+// Checks distance from (x,y) to each foundation instead of from the player.
+window.buildOrUpgradeTowerAt = (x, y) => {
+  let target = null;
+  let min = Infinity;
+  for (const f of (window.foundations || [])) {
+    const cx = f.x + f.width / 2;
+    const cy = f.y + f.height / 2;
+    const d = Math.hypot(x - cx, y - cy);
+    if (d <= TOWER_BUILD_RANGE && d < min) { min = d; target = f; }
+  }
+  if (!target) return false;
+  if (!target.tower) {
+    if (player.gems < TOWER_COST) return false;
+    player.gems -= TOWER_COST;
+    target.tower = new Tower(target.x + target.width / 2, target.y + target.height / 2);
+  } else {
+    if (target.tower.level >= MAX_TOWER_LEVEL) return false;
+    const upgradeCost = TOWER_COST + 25 * (target.tower.level - 1);
+    if (player.gems < upgradeCost) return false;
+    player.gems -= upgradeCost;
+    target.tower.level += 1;
+  }
+  if (window.updateHUD) window.updateHUD();
+  return true;
+};
+
 function update(dt) {
   let dx = 0;
   let dy = 0;
-// FIXED: Read key states explicitly from the shared window global scope
-  if (window.keys && window.keys.w) dy -= 1;
-  if (window.keys && window.keys.s) dy += 1;
-  if (window.keys && window.keys.a) dx -= 1;
-  if (window.keys && window.keys.d) dx += 1;
+
+  // Prefer smooth touch direction if available (from virtual joystick)
+  if (window.touchDirection && (window.touchDirection.x !== 0 || window.touchDirection.y !== 0)) {
+    dx = window.touchDirection.x;
+    dy = window.touchDirection.y;
+  } else {
+    // Fall back to keyboard input
+    if (window.keys && window.keys.w) dy -= 1;
+    if (window.keys && window.keys.s) dy += 1;
+    if (window.keys && window.keys.a) dx -= 1;
+    if (window.keys && window.keys.d) dx += 1;
+  }
 
   // Normalize diagonal movement to maintain consistent speed
 
@@ -389,6 +423,11 @@ function draw() {
   // Draw XP gems
   for (const gem of window.xpGems) {
     gem.draw(ctx);
+  }
+
+  // Draw touch controls overlay (virtual joystick)
+  if (window.drawTouchControls) {
+    window.drawTouchControls(ctx);
   }
 }
 

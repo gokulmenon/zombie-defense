@@ -43,6 +43,11 @@ class Enemy {
 
         this.waypointIndex = 0;
         this.waypoints = [];
+
+        // Scale radius for small screens so enemies fit through corridors
+        const screenScale = Math.min(1, window.innerWidth / 800);
+        this.radius = Math.round(this.radius * screenScale);
+
         this.initWaypoints();
     }
 

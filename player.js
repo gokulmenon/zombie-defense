@@ -6,7 +6,7 @@ const player = {
 
     y: window.innerHeight * 0.75,
 
-    radius: 15,
+    radius: Math.round(15 * Math.min(1, window.innerWidth / 800)),
 
     speed: 0.2, // pixels per ms
 
@@ -63,6 +63,22 @@ window.fireProjectile = () => {
 
     }
 
+};
+
+// Fire a projectile toward specific canvas coordinates (used by touch controls)
+window.fireProjectileAt = (targetX, targetY) => {
+    const dx = targetX - player.x;
+    const dy = targetY - player.y;
+    const dist = Math.hypot(dx, dy);
+
+    let nx = 1;
+    let ny = 0;
+    if (dist > 0) {
+        nx = dx / dist;
+        ny = dy / dist;
+    }
+
+    window.projectiles.push(new Projectile(player.x, player.y, nx, ny));
 };
 
 

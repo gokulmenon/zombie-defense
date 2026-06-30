@@ -12,7 +12,7 @@ class Projectile {
 
         this.vy = vy;
 
-        this.radius = 4;
+        this.radius = Math.max(2, Math.round(4 * Math.min(1, window.innerWidth / 800)));
 
         this.speed = 0.5; // pixels per ms
 
